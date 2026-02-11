@@ -8,13 +8,13 @@ connectDB();
 
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('API is running...');
-});
-
 const urlRoutes = require('./routes/urls');
-
 app.use('/api',urlRoutes);
+
+const indexRoutes = require('./routes/index');
+app.get('/', indexRoutes);
+
+
 
 const PORT = process.env.PORT || 5000;
 
