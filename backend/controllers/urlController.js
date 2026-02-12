@@ -47,16 +47,15 @@ const redirectToUrl = async (req, res) => {
     const url = await Url.findOne({ urlCode: req.params.code });
 
     if (url) {
-      return res.status(200).json({ 
-        success: true, 
-        message: 'URL found successfully.', 
-        data: url 
-      });
+      url.clicks++;
+      await url.save();
+
+      return res.redirect(301,url.longUrl);
     } else {
       return res.status(404).json({ success: false, error: 'No URL found' });
     }
   } catch (err) {
-    console.error('Server error on redirect:', err); 
+    console.error('Server error on redirect:', err);
     res.status(500).json({ success: false, error: 'Internal Server Error' });
   }
 };
