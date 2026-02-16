@@ -25,16 +25,25 @@ const shortenUrl = async (req, res) => {
 
     const shortUrl = `${process.env.BASE_URL}/${urlCode}`;
 
-    url = await Url.create({
-        longUrl,
-        shortUrl,
-        urlCode,
-    });
-
-    res.status(201).json({
-      success: true,
-      data: url
-    });
+     const newUrlData = {
+      longUrl,
+      shortUrl,
+      urlCode,
+    };
+    
+    // Check if the auth middleware added a user to the request object.
+    // This is the core of our optional authentication.
+    if (req.user) {
+      // If a user is logged in, add their ID to the data object.
+      // req.user.id comes directly from the decoded JWT payload.
+      newUrlData.user = req.user.id;
+    }
+    
+    // Create the new URL document in the database using our data object.
+    // If req.user existed, the 'user' field will be populated.
+    // If not, the 'user' field will be omitted, and Mongoose won't save it.
+    url = await Url.create(newUrlData);
+        res.status(201).json({ success: true, data: url });
     
   } catch (err) {
     console.error('Database error:', err); 
