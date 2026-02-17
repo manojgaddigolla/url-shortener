@@ -13,6 +13,9 @@ app.use('/api',urlRoutes);
 const authRoutes  = require('./routes/auth');
 app.use('/api/auth',authRoutes);
 
+const linksRoutes = require('./routes/links');
+app.use('/api/links', linksRoutes);
+
 const indexRoutes = require('./routes/index');
 app.get('/', indexRoutes);
 
