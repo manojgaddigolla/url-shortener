@@ -44,13 +44,14 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="auth-container">
-      <h2>Create Your Account</h2>
-      <p>Join us to start creating your own short links!</p>
+        <div className="max-w-md mx-auto">  
+    <div  className="bg-white p-8 mt-10 rounded-lg shadow-lg">
+      <h2 className="text-2xl font-bold text-center mb-2">Create Your Account</h2>
+      <p className="text-center text-slate-500 mb-6">Join us to start creating your own short links!</p>
       
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="name">Name</label>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div >
+          <label htmlFor="name"  className="block text-sm font-medium text-slate-700 mb-1">Name</label>
           <input
             id="name"
             type="text"
@@ -59,45 +60,49 @@ const RegisterPage = () => {
             value={formData.name}
             onChange={handleChange}
             required
+             className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="email">Email Address</label>
+        <div >
+          <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
           <input
             id="email"
-            type="email" // Using type="email" provides browser-level validation.
+            type="email" 
             placeholder="Enter your email"
             name='email'
             value={formData.email}
             onChange={handleChange}
             required
+             className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="password">Password</label>
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">Password</label>
           <input
             id="password"
-            type="password" // Using type="password" automatically masks the input.
+            type="password" 
             placeholder="Choose a strong password"
             name='password'
             value={formData.password}
             onChange={handleChange}
             required
+            className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
-        <button type="submit" className="btn">Register</button>
+        <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-md font-semibold hover:bg-blue-700">Register</button>
       </form>
 
-       {error && <p className="error-message" style={{ color: 'red' }}>{error}</p>}
-      {success && <p className="success-message" style={{ color: 'green' }}>{success}</p>}
+       {error && <p className="mt-4 text-center text-red-500" >{error}</p>}
+      {success && <p className="mt-4 text-center text-green-500">{success}</p>}
       
-      <p className="auth-switch">
+      <p className="mt-6 text-center text-sm">
         Already have an account? 
-        <Link to="/login">Login here</Link> 
+        <Link to="/login" className="font-medium text-blue-600 hover:underline">Login here</Link> 
       </p>
+    </div>
     </div>
   );
 };
