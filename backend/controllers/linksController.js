@@ -2,7 +2,7 @@ const Url = require('../models/Url');
 
 const getMyLinks = async (req, res) => {
   try {
-   
+
     if (!req.user) {
       return res.status(401).json({ success: false, error: 'Not authorized to access this route' });
     }

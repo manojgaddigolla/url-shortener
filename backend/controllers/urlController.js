@@ -2,17 +2,29 @@ const validUrl = require('valid-url');
 const Url = require('../models/Url');
 
 const shortenUrl = async (req, res) => {
-    const { longUrl } = req.body;
+  const { longUrl } = req.body;
 
-    console.log('Received long URL:', longUrl);
+  if (!longUrl) {
+    return res.status(400).json({ success: false, error: 'Please provide a URL' });
+  }
+  if (!validUrl.isUri(longUrl)) {
+    return res.status(400).json({ success: false, error: 'Invalid URL format provided' });
+  }
 
-    if (!longUrl) {
-        return res.status(400).json({ success: false, error: 'Please provide a URL' });
-    }
-    if (!validUrl.isUri(longUrl)) {
-        return res.status(400).json({ success: false, error: 'Invalid URL format provided' });
-    }
-    try {
+  // Sanitize log to avoid PII leakage - log only hostname and path
+  try {
+    const urlObj = new URL(longUrl);
+    console.log('Received short URL request for:', urlObj.hostname + urlObj.pathname);
+  } catch (e) {
+    // If URL parsing fails, don't log anything
+  }
+
+  // Defensive check for BASE_URL (should be caught at startup, but check here too)
+  if (!process.env.BASE_URL || process.env.BASE_URL.trim() === '') {
+    return res.status(500).json({ success: false, error: 'Server configuration error: BASE_URL not set' });
+  }
+
+  try {
     let url = await Url.findOne({ longUrl: longUrl });
 
     if (url) {
@@ -20,33 +32,29 @@ const shortenUrl = async (req, res) => {
     }
 
     const { nanoid } = await import('nanoid');
-    
+
     const urlCode = nanoid(7);
 
     const shortUrl = `${process.env.BASE_URL}/${urlCode}`;
 
-     const newUrlData = {
+    const newUrlData = {
       longUrl,
       shortUrl,
       urlCode,
     };
-    
-    // Check if the auth middleware added a user to the request object.
-    // This is the core of our optional authentication.
+
+
     if (req.user) {
-      // If a user is logged in, add their ID to the data object.
-      // req.user.id comes directly from the decoded JWT payload.
+
       newUrlData.user = req.user.id;
     }
-    
-    // Create the new URL document in the database using our data object.
-    // If req.user existed, the 'user' field will be populated.
-    // If not, the 'user' field will be omitted, and Mongoose won't save it.
+
+
     url = await Url.create(newUrlData);
-        res.status(201).json({ success: true, data: url });
-    
+    res.status(201).json({ success: true, data: url });
+
   } catch (err) {
-    console.error('Database error:', err); 
+    console.error('Database error:', err);
     res.status(500).json({ success: false, error: 'Internal Server Error' });
   }
 };
@@ -59,7 +67,9 @@ const redirectToUrl = async (req, res) => {
       url.clicks++;
       await url.save();
 
-      return res.redirect(301,url.longUrl);
+      // Use 302 temporary redirect instead of 301 permanent redirect
+      // This ensures all visits reach our server for accurate click tracking
+      return res.redirect(302, url.longUrl);
     } else {
       return res.status(404).json({ success: false, error: 'No URL found' });
     }
@@ -70,6 +80,6 @@ const redirectToUrl = async (req, res) => {
 };
 
 module.exports = {
-    shortenUrl,
-    redirectToUrl,
+  shortenUrl,
+  redirectToUrl,
 };

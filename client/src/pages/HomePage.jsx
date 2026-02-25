@@ -6,48 +6,56 @@ const HomePage = () => {
 
   const [longUrl, setLongUrl] = useState('');
   const [shortUrlData, setShortUrlData] = useState(null);
-  const [error, setError] = useState('');
+  const [serverError, setServerError] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+
+  const validateUrl = () => {
+    const errors = {};
+    const urlPattern = new RegExp('^(https?:\\/\\/)' +
+      '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' +
+      '((\\d{1,3}\\.){3}\\d{1,3}))' +
+      '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' +
+      '(\\?[;&a-z\\d%_.~+=-]*)?' +
+      '(\\#[-a-z\\d_]*)?$', 'i');
+
+    if (!longUrl) {
+      errors.longUrl = 'URL field cannot be empty.';
+    } else if (!urlPattern.test(longUrl)) {
+      errors.longUrl = 'Please enter a valid URL (e.g., https://example.com).';
+    }
+    return errors;
+  };
 
   const handleSubmit = async (e) => {
 
     e.preventDefault();
     setIsCopied(false);
-    setError('');
+    setServerError('');
+    setShortUrlData(null); // Clear previous result
     setIsLoading(true);
-    if (!longUrl) {
-      setError('Please enter a URL to shorten.');
-      setShortUrlData(null);
+
+    const validationErrors = validateUrl();
+    setFormErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setIsLoading(false); // Clear loading state on validation failure
       return;
     }
 
     try {
-      setError('');
-      const response = await createShortUrl(longUrl);
-      setShortUrlData(response.data);
-
+      const data = await createShortUrl({ longUrl });
+      setShortUrlData(data);
     } catch (err) {
-
-      const errorMessage = err.error || 'An unexpected error occurred.';
-      setError(errorMessage);
-      setShortUrlData(null);
-
-      console.error('Error from API:', err);
+      setServerError(err.message || 'An error occurred.');
     } finally {
       setIsLoading(false);
     }
 
-  //   try {
-  //     const data = await apiService.shortenUrl({ longUrl });
-  //     setShortUrlData(data);
-  //   } catch (err) {
-  //     setError(err.message || 'An error occurred.');
-  //   } 
-  // };
   };
 
-    const handleCopy = async () => {
+  const handleCopy = async () => {
     if (!shortUrlData || !shortUrlData.shortUrl) return;
 
     try {
@@ -64,15 +72,15 @@ const HomePage = () => {
 
   return (
     <div className="max-w-2xl mx-auto text-center">
-       <h1 className="text-4xl font-bold mb-2">URL Shortener</h1>
-       <p className="text-lg text-slate-600">Enter a long URL to make it short and easy to share!</p>
+      <h1 className="text-4xl font-bold mb-2">URL Shortener</h1>
+      <p className="text-lg text-slate-600">Enter a long URL to make it short and easy to share!</p>
 
       <div className="mt-8 bg-white p-8 rounded-lg shadow-lg">
 
-      
-      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
-        
-          
+
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col sm:flex-row gap-4">
+
+
           <input
             type="url"
             placeholder="https://example.com"
@@ -81,41 +89,42 @@ const HomePage = () => {
             disabled={isLoading}
             className="flex-grow p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           />
-        
-        <button type="submit" disabled={isLoading}  className="bg-blue-600 text-white p-3 rounded-md font-semibold hover:bg-blue-700 disabled:bg-blue-400 w-full sm:w-auto">
-          {isLoading ? <Spinner size="small" /> : 'Shorten'}
-        </button>
-      </form>
 
-   
+          {formErrors.longUrl && (
+            <p className="text-red-500 text-sm text-left mt-1">{formErrors.longUrl}</p>
+          )}
 
-      {shortUrlData && (
-        <div className="mt-6 pt-6 border-t text-left" >
+          <button type="submit" disabled={isLoading} className="bg-blue-600 text-white p-3 rounded-md font-semibold hover:bg-blue-700 disabled:bg-blue-400 w-full sm:w-auto">
+            {isLoading ? <Spinner size="small" /> : 'Shorten'}
+          </button>
+        </form>
 
-        <div className="flex justify-between items-center bg-slate-100 p-3 rounded-md" >
-          
 
-            <a
-              href={shortUrlData.shortUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-blue-600 break-all"
-            >
-              {shortUrlData.shortUrl}
-            </a>
-          <button type="button" className="bg-slate-200 hover:bg-slate-300 px-3 py-1 rounded-md text-sm font-semibold ml-4" onClick={handleCopy}>
-               {isCopied ? 'Copied!' : 'Copy'}
-            </button>
-         
-        </div>
-        </div>
-      )}
 
-         {error && (
-        <p className="mt-4 text-red-500" >
-           {error}
-        </p>
-      )}
+
+        {shortUrlData && (
+          <div className="mt-6 pt-6 border-t text-left" >
+
+            <div className="flex justify-between items-center bg-slate-100 p-3 rounded-md" >
+
+
+              <a
+                href={shortUrlData.shortUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-blue-600 break-all"
+              >
+                {shortUrlData.shortUrl}
+              </a>
+              <button type="button" className="bg-slate-200 hover:bg-slate-300 px-3 py-1 rounded-md text-sm font-semibold ml-4" onClick={handleCopy}>
+                {isCopied ? 'Copied!' : 'Copy'}
+              </button>
+
+            </div>
+          </div>
+        )}
+
+        {serverError && <p className="mt-4 text-red-500">{serverError}</p>}
       </div>
     </div>
   );
