@@ -43,7 +43,7 @@ const LoginPage = () => {
         setError('Login successful, but no token was provided.');
       }
     } catch (err) {
-      const errorMessage = err.error || 'Login failed. Please check your credentials.';
+      const errorMessage = err.message || 'Login failed. Please check your credentials.';
       setError(errorMessage);
       console.error('Login error:', err);
     }

@@ -11,6 +11,7 @@ const UrlSchema = new mongoose.Schema({
   longUrl: {
     type: String,
     required: true,
+    index: true,
   },
 
   shortUrl: {
@@ -33,7 +34,10 @@ const UrlSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: false,
+    index: true,
   },
 });
+
+UrlSchema.index({ user: 1, date: -1 });
 
 module.exports = mongoose.model('Url', UrlSchema);

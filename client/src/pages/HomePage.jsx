@@ -45,7 +45,7 @@ const HomePage = () => {
     }
 
     try {
-      const data = await createShortUrl({ longUrl });
+      const data = await createShortUrl(longUrl);
       setShortUrlData(data);
     } catch (err) {
       setServerError(err.message || 'An error occurred.');
