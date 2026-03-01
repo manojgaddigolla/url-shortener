@@ -1,6 +1,16 @@
 const validUrl = require('valid-url');
 const Url = require('../models/Url');
 
+// Cache nanoid import (ESM-only module) to avoid re-importing on every request
+let nanoidFn;
+const getNanoid = async () => {
+  if (!nanoidFn) {
+    const { nanoid } = await import('nanoid');
+    nanoidFn = nanoid;
+  }
+  return nanoidFn;
+};
+
 const shortenUrl = async (req, res) => {
   const { longUrl } = req.body;
 
@@ -31,7 +41,7 @@ const shortenUrl = async (req, res) => {
       return res.status(200).json({ success: true, data: url });
     }
 
-    const { nanoid } = await import('nanoid');
+    const nanoid = await getNanoid();
 
     const urlCode = nanoid(7);
 
@@ -61,12 +71,14 @@ const shortenUrl = async (req, res) => {
 
 const redirectToUrl = async (req, res) => {
   try {
-    const url = await Url.findOne({ urlCode: req.params.code });
+    const url = await Url.findOneAndUpdate(
+      { urlCode: req.params.code },
+      { $inc: { clicks: 1 } },
+      // new: false returns the pre-update document; we only need longUrl for the redirect
+      { new: false, projection: { longUrl: 1 } }
+    );
 
     if (url) {
-      url.clicks++;
-      await url.save();
-
       // Use 302 temporary redirect instead of 301 permanent redirect
       // This ensures all visits reach our server for accurate click tracking
       return res.redirect(302, url.longUrl);

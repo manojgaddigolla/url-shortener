@@ -9,7 +9,7 @@ export const getUserLinks = async (token) => {
       method: 'GET',
       url: API_URL,
       headers: {
-        Authorization: `Bearer ${token}`,
+        'x-auth-token': token,
       },
     });
 

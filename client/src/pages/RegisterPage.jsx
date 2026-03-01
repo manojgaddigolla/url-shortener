@@ -48,7 +48,7 @@ const RegisterPage = () => {
     if (Object.keys(validationErrors).length > 0) return;
 
     try {
-      const response = await registerUser(formData);
+      await registerUser(formData);
 
       setSuccess('Registration successful! Please log in.');
       setFormData({ name: '', email: '', password: '' });

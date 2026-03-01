@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 
 const AuthContext = createContext(null);
 
@@ -28,27 +28,22 @@ const isTokenValid = (token) => {
 
 export const AuthProvider = ({ children }) => {
 
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [isLoading, setIsLoading] = useState(true);
-
+  // Use lazy initializer to validate and clean up token before first render,
+  // avoiding a synchronous setState call inside useEffect.
+  const [token, setToken] = useState(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken && isTokenValid(storedToken)) {
+      return storedToken;
+    }
+    if (storedToken) {
+      localStorage.removeItem('token');
+    }
+    return null;
+  });
+  // isLoading is always false since auth state is synchronously initialized
+  const isLoading = false;
   // Derive isAuthenticated from token validity (not just existence)
   const isAuthenticated = !!token && isTokenValid(token);
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      // Validate the stored token
-      if (isTokenValid(storedToken)) {
-        setToken(storedToken);
-      } else {
-        // Token is expired or invalid - clear it
-        localStorage.removeItem('token');
-        setToken(null);
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
   const login = (newToken) => {
     localStorage.setItem('token', newToken);
     setToken(newToken);
@@ -75,6 +70,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

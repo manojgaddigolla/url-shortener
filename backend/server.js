@@ -30,7 +30,7 @@ const urlRoutes = require('./routes/urls');
 app.use('/api/short', urlRoutes);
 
 const indexRoutes = require('./routes/index');
-app.get('/', indexRoutes);
+app.use('/', indexRoutes);
 
 app.use(errorHandler);
 
