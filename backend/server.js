@@ -10,6 +10,7 @@ if (!process.env.BASE_URL || process.env.BASE_URL.trim() === '') {
 const errorHandler = require('./middleware/errorMiddleware');
 const connectDB = require('./config/db');
 const express = require('express');
+const cors = require('cors');
 const app = express();
 
 // Trust proxy - enable if behind a reverse proxy (nginx, AWS ELB, Heroku, etc.)
@@ -18,6 +19,10 @@ const app = express();
 app.set('trust proxy', 1);
 
 connectDB();
+
+// Enable CORS for all routes
+app.use(cors());
+
 app.use(express.json());
 
 const authRoutes = require('./routes/auth');

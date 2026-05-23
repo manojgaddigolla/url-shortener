@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginUser } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
+import Spinner from '../components/Spinner';
 
 const LoginPage = () => {
 
@@ -11,6 +12,7 @@ const LoginPage = () => {
   });
 
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const { login } = useAuth();
@@ -25,41 +27,44 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
     if (!formData.email || !formData.password) {
       setError('Both email and password are required.');
       return;
     }
 
+    setIsLoading(true);
+
     try {
       const response = await loginUser(formData);
-
       const token = response?.token || response?.data?.token;
 
       if (token) {
         login(token);
         navigate('/dashboard', { replace: true });
-      }
-      else {
+      } else {
         setError('Login successful, but no token was provided.');
       }
     } catch (err) {
       const errorMessage = err.message || 'Login failed. Please check your credentials.';
       setError(errorMessage);
       console.error('Login error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-
-
   return (
-    <div className="max-w-md mx-auto">
-      <div className="bg-white p-8 mt-10 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-center mb-2">Welcome Back!</h2>
-        <p className="text-center text-slate-500 mb-6">Log in to access your dashboard.</p>
+    <div className="max-w-md mx-auto mt-10 md:mt-16 animate-[fade-in_0.3s_ease-out]">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-extrabold text-slate-900 mb-2">Welcome Back</h2>
+        <p className="text-slate-500">Log in to manage your shortened links</p>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div >
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+      <div className="saas-card p-8 md:p-10">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
             <input
               id="email"
               type="email"
@@ -67,12 +72,13 @@ const LoginPage = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="you@example.com"
+              className="saas-input w-full p-3"
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
             <input
               id="password"
               type="password"
@@ -80,18 +86,24 @@ const LoginPage = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="••••••••"
+              className="saas-input w-full p-3"
             />
           </div>
+          
           {error && (
-            <p className="text-red-500 text-sm text-center" role="alert">{error}</p>
+            <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm text-center font-medium animate-[shake_0.5s_ease-in-out]" role="alert">
+              {error}
+            </div>
           )}
-          <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-md font-semibold hover:bg-blue-700">Login</button>
+          
+          <button type="submit" disabled={isLoading} className="saas-btn-primary w-full py-3 mt-4 disabled:opacity-70">
+            {isLoading ? <Spinner size="small" /> : 'Log in to Dashboard'}
+          </button>
         </form>
 
-
-        <p className="mt-6 text-center text-sm">
-          Don't have an account? <Link to="/register" className="font-medium text-blue-600 hover:underline">Register now</Link>
+        <p className="mt-8 text-center text-sm text-slate-500">
+          Don't have an account? <Link to="/register" className="font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">Sign up for free</Link>
         </p>
       </div>
     </div>

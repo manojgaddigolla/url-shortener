@@ -25,6 +25,24 @@ const UrlSchema = new mongoose.Schema({
     default: 0,
   },
 
+  analytics: [{
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    userAgent: {
+      type: String
+    },
+    referrer: {
+      type: String
+    }
+  }],
+
+  expiresAt: {
+    type: Date,
+    default: null,
+  },
+
   date: {
     type: Date,
     default: Date.now,

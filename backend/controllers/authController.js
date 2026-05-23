@@ -35,8 +35,19 @@ const registerUser = async (req, res) => {
       password: hashedPassword,
     });
 
+    const payload = {
+      user: {
+        id: newUser._id,
+      },
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '1h',
+    });
+
     res.status(201).json({
       success: true,
+      token: token,
       data: {
         _id: newUser._id,
         name: newUser.name,

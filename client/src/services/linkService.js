@@ -1,13 +1,13 @@
 import axios from 'axios';
 
-const API_URL = '/api/links/my-links';
+const API_URL = '/api/links';
 
 export const getUserLinks = async (token) => {
   try {
 
     const response = await axios({
       method: 'GET',
-      url: API_URL,
+      url: `${API_URL}/my-links`,
       headers: {
         'x-auth-token': token,
       },
@@ -26,5 +26,24 @@ export const getUserLinks = async (token) => {
     }
 
     throw new Error('An unexpected error occurred while fetching links.');
+  }
+};
+
+export const deleteUserLink = async (token, id) => {
+  try {
+    const response = await axios({
+      method: 'DELETE',
+      url: `${API_URL}/${id}`,
+      headers: {
+        'x-auth-token': token,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('API Error: Failed to delete user link', error.response?.data || error);
+    if (error.response?.data) {
+      throw error.response.data;
+    }
+    throw new Error('An unexpected error occurred while deleting link.');
   }
 };

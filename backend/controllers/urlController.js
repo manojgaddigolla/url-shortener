@@ -12,7 +12,7 @@ const getNanoid = async () => {
 };
 
 const shortenUrl = async (req, res) => {
-  const { longUrl } = req.body;
+  const { longUrl, expiresInDays } = req.body;
 
   if (!longUrl) {
     return res.status(400).json({ success: false, error: 'Please provide a URL' });
@@ -35,22 +35,28 @@ const shortenUrl = async (req, res) => {
   }
 
   try {
-    let url = await Url.findOne({ longUrl: longUrl });
+    let url = await Url.findOne({ longUrl: longUrl, user: req.user ? req.user.id : undefined });
 
     if (url) {
       return res.status(200).json({ success: true, data: url });
     }
 
     const nanoid = await getNanoid();
-
     const urlCode = nanoid(7);
 
     const shortUrl = `${process.env.BASE_URL}/${urlCode}`;
+
+    let expiresAt = null;
+    if (expiresInDays && !isNaN(expiresInDays)) {
+      expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + parseInt(expiresInDays));
+    }
 
     const newUrlData = {
       longUrl,
       shortUrl,
       urlCode,
+      expiresAt,
     };
 
 
@@ -71,9 +77,35 @@ const shortenUrl = async (req, res) => {
 
 const redirectToUrl = async (req, res) => {
   try {
+    const urlCheck = await Url.findOne({ urlCode: req.params.code });
+    if (!urlCheck) {
+      return res.status(404).json({ success: false, error: 'No URL found' });
+    }
+
+    if (urlCheck.expiresAt && new Date() > urlCheck.expiresAt) {
+      return res.status(410).send(`
+        <html>
+          <head><title>Link Expired</title></head>
+          <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+            <h1 style="color: #333;">Link Expired</h1>
+            <p style="color: #666;">This shortened link is no longer active because it has reached its expiration date.</p>
+          </body>
+        </html>
+      `);
+    }
+
+    const analyticsData = {
+      timestamp: Date.now(),
+      userAgent: req.headers['user-agent'] || 'Unknown',
+      referrer: req.headers['referer'] || req.headers['referrer'] || 'Direct'
+    };
+
     const url = await Url.findOneAndUpdate(
       { urlCode: req.params.code },
-      { $inc: { clicks: 1 } },
+      { 
+        $inc: { clicks: 1 },
+        $push: { analytics: analyticsData }
+      },
       // new: false returns the pre-update document; we only need longUrl for the redirect
       { new: false, projection: { longUrl: 1 } }
     );
@@ -82,8 +114,6 @@ const redirectToUrl = async (req, res) => {
       // Use 302 temporary redirect instead of 301 permanent redirect
       // This ensures all visits reach our server for accurate click tracking
       return res.redirect(302, url.longUrl);
-    } else {
-      return res.status(404).json({ success: false, error: 'No URL found' });
     }
   } catch (err) {
     console.error('Server error on redirect:', err);
