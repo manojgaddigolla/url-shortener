@@ -49,7 +49,7 @@ const HomePage = () => {
       const data = await createShortUrl(longUrl, expiresInDays || undefined);
       setShortUrlData(data);
     } catch (err) {
-      setServerError(err.message || 'An error occurred.');
+      setServerError(err.error || err.message || 'An error occurred.');
     } finally {
       setIsLoading(false);
     }
