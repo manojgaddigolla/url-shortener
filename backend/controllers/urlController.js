@@ -1,5 +1,7 @@
 const validUrl = require('valid-url');
 const Url = require('../models/Url');
+const geoip = require('geoip-lite');
+const UAParser = require('ua-parser-js');
 
 // Cache nanoid import (ESM-only module) to avoid re-importing on every request
 let nanoidFn;
@@ -143,10 +145,48 @@ const redirectToUrl = async (req, res) => {
       `);
     }
 
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const parser = new UAParser(userAgent);
+    const result = parser.getResult();
+    const deviceType = result.device.type || 'Desktop'; // Default to Desktop if not mobile/tablet
+
+    // Get client IP
+    let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.connection.remoteAddress || '';
+    if (ip.includes(',')) {
+      ip = ip.split(',')[0].trim(); // Get the first IP in case of multiple proxies
+    }
+    
+    // Convert IPv4-mapped IPv6 addresses to standard IPv4
+    if (ip.startsWith('::ffff:')) {
+      ip = ip.substring(7);
+    }
+    
+    // For local testing (portfolio/demo), mock a public IP if it's localhost
+    if (ip === '127.0.0.1' || ip === '::1' || !ip) {
+      const mockIps = ['8.8.8.8', '8.8.8.8', '178.62.205.239', '139.130.4.5', '201.21.32.11']; // US, UK, AUS, BRA
+      ip = mockIps[Math.floor(Math.random() * mockIps.length)];
+    }
+
+    let country = 'Unknown';
+    let city = 'Unknown';
+
+    // Offline lookup
+    if (ip && ip !== '127.0.0.1' && ip !== '::1') {
+      const geo = geoip.lookup(ip);
+      if (geo) {
+        country = geo.country || 'Unknown';
+        city = geo.city || 'Unknown';
+      }
+    }
+
     const analyticsData = {
       timestamp: Date.now(),
-      userAgent: req.headers['user-agent'] || 'Unknown',
-      referrer: req.headers['referer'] || req.headers['referrer'] || 'Direct'
+      userAgent: userAgent,
+      referrer: req.headers['referer'] || req.headers['referrer'] || 'Direct',
+      ip: ip,
+      country: country,
+      city: city,
+      deviceType: deviceType
     };
 
     const url = await Url.findOneAndUpdate(

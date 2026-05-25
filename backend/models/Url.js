@@ -35,6 +35,18 @@ const UrlSchema = new mongoose.Schema({
     },
     referrer: {
       type: String
+    },
+    ip: {
+      type: String
+    },
+    country: {
+      type: String
+    },
+    city: {
+      type: String
+    },
+    deviceType: {
+      type: String
     }
   }],
 

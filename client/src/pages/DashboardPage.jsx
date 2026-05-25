@@ -121,6 +121,9 @@ const DashboardPage = () => {
 
   let topOS = { Windows: 0, macOS: 0, iOS: 0, Android: 0, Linux: 0, Other: 0 };
   let topBrowsers = { Chrome: 0, Safari: 0, Firefox: 0, Edge: 0, Other: 0 };
+  let topCountries = {};
+  let topCities = {};
+  let deviceTypes = { Desktop: 0, mobile: 0, tablet: 0, smarttv: 0, Other: 0 };
 
   links.forEach(link => {
     if (link.analytics && link.analytics.length > 0) {
@@ -144,6 +147,21 @@ const DashboardPage = () => {
         else if (ua.includes('safari') && !ua.includes('chrome')) topBrowsers.Safari++;
         else if (ua.includes('firefox')) topBrowsers.Firefox++;
         else topBrowsers.Other++;
+
+        if (visit.country && visit.country !== 'Unknown') {
+          topCountries[visit.country] = (topCountries[visit.country] || 0) + 1;
+        }
+
+        if (visit.city && visit.city !== 'Unknown') {
+          topCities[visit.city] = (topCities[visit.city] || 0) + 1;
+        }
+
+        const device = visit.deviceType || 'Desktop';
+        if (deviceTypes[device] !== undefined) {
+          deviceTypes[device]++;
+        } else {
+          deviceTypes.Other++;
+        }
       });
     }
   });
@@ -152,6 +170,9 @@ const DashboardPage = () => {
 
   const sortedOS = Object.entries(topOS).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
   const sortedBrowsers = Object.entries(topBrowsers).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const sortedCountries = Object.entries(topCountries).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const sortedCities = Object.entries(topCities).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const sortedDevices = Object.entries(deviceTypes).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
   return (
     <div className="max-w-6xl mx-auto mt-8">
@@ -166,7 +187,7 @@ const DashboardPage = () => {
 
       {/* Analytics Overview */}
       {!isLoading && !error && links.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <div className="saas-card p-6 flex flex-col justify-center">
             <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">Total Links</h3>
             <p className="text-4xl font-extrabold text-slate-900">{totalLinks}</p>
@@ -176,6 +197,23 @@ const DashboardPage = () => {
             <p className="text-4xl font-extrabold text-indigo-600">{totalClicks}</p>
           </div>
           
+          <div className="saas-card p-6">
+            <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-3">Top Cities</h3>
+            <div className="flex flex-col gap-2">
+              {sortedCities.length > 0 ? sortedCities.map(([city, count]) => (
+                <div key={city} className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600 font-medium">{city}</span>
+                  <div className="flex items-center gap-2 w-1/2">
+                    <div className="h-2 bg-sky-100 rounded-full w-full overflow-hidden">
+                      <div className="h-full bg-sky-500 rounded-full" style={{ width: `${(count / totalClicks) * 100}%` }}></div>
+                    </div>
+                    <span className="text-xs text-slate-400 w-6 text-right">{count}</span>
+                  </div>
+                </div>
+              )) : <span className="text-sm text-slate-400">No data yet</span>}
+            </div>
+          </div>
+
           <div className="saas-card p-6">
             <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-3">Top OS</h3>
             <div className="flex flex-col gap-2">
@@ -210,7 +248,24 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          <div className="saas-card p-6 lg:col-span-4">
+          <div className="saas-card p-6">
+            <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-3">Device Types</h3>
+            <div className="flex flex-col gap-2">
+              {sortedDevices.length > 0 ? sortedDevices.map(([device, count]) => (
+                <div key={device} className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600 font-medium capitalize">{device}</span>
+                  <div className="flex items-center gap-2 w-1/2">
+                    <div className="h-2 bg-amber-100 rounded-full w-full overflow-hidden">
+                      <div className="h-full bg-amber-500 rounded-full" style={{ width: `${(count / totalClicks) * 100}%` }}></div>
+                    </div>
+                    <span className="text-xs text-slate-400 w-6 text-right">{count}</span>
+                  </div>
+                </div>
+              )) : <span className="text-sm text-slate-400">No data yet</span>}
+            </div>
+          </div>
+
+          <div className="saas-card p-6 lg:col-span-3">
             <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-3">Clicks (Last 7 Days)</h3>
             <div className="flex items-end justify-between h-24 gap-2">
               {last7Days.map((day, i) => (

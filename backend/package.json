@@ -17,9 +17,11 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
+    "geoip-lite": "^1.4.10",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.6",
     "nanoid": "^5.1.6",
+    "ua-parser-js": "^2.0.10",
     "valid-url": "^1.0.9"
   },
   "devDependencies": {
