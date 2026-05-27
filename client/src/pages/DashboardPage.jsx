@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getUserLinks, deleteUserLink } from '../services/linkService';
 import Spinner from '../components/Spinner';
+import LinkAnalyticsModal from '../components/LinkAnalyticsModal';
 
 const DashboardPage = () => {
   const [links, setLinks] = useState([]);
@@ -11,6 +12,7 @@ const DashboardPage = () => {
   const [copiedLinkId, setCopiedLinkId] = useState(null);
   const [isDeletingId, setIsDeletingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLinkAnalytics, setSelectedLinkAnalytics] = useState(null);
 
   const { token, logout, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -369,6 +371,14 @@ const DashboardPage = () => {
                         <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
                           <button 
                             className="px-3 py-1.5 text-xs rounded-md font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-all"
+                            onClick={() => setSelectedLinkAnalytics(link)}
+                            title="View Analytics"
+                          >
+                            <svg className="w-3.5 h-3.5 inline-block -mt-0.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                            Stats
+                          </button>
+                          <button 
+                            className="px-3 py-1.5 text-xs rounded-md font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-all"
                             onClick={() => downloadQR(link.shortUrl, link.urlCode)}
                             title="Download QR Code"
                           >
@@ -413,6 +423,12 @@ const DashboardPage = () => {
             )}
       </div>
 
+      {selectedLinkAnalytics && (
+        <LinkAnalyticsModal 
+          link={selectedLinkAnalytics} 
+          onClose={() => setSelectedLinkAnalytics(null)} 
+        />
+      )}
     </div>
   );
 };
