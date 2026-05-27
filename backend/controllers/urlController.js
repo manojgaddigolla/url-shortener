@@ -161,11 +161,7 @@ const redirectToUrl = async (req, res) => {
       ip = ip.substring(7);
     }
     
-    // For local testing (portfolio/demo), mock a public IP if it's localhost
-    if (ip === '127.0.0.1' || ip === '::1' || !ip) {
-      const mockIps = ['8.8.8.8', '8.8.8.8', '178.62.205.239', '139.130.4.5', '201.21.32.11']; // US, UK, AUS, BRA
-      ip = mockIps[Math.floor(Math.random() * mockIps.length)];
-    }
+
 
     let country = 'Unknown';
     let city = 'Unknown';
