@@ -186,6 +186,53 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
     },
   };
 
+  const handleDownloadCSV = () => {
+    if (!analytics || analytics.length === 0) {
+      alert('No data to download.');
+      return;
+    }
+
+    const headers = ['Date', 'Time', 'Country', 'City', 'Device', 'OS', 'Browser', 'Referrer'];
+    
+    const rows = analytics.map(visit => {
+      const d = new Date(visit.timestamp);
+      const date = d.toLocaleDateString();
+      const time = d.toLocaleTimeString();
+      const country = visit.country || 'Unknown';
+      const city = visit.city || 'Unknown';
+      const device = visit.deviceType || 'Desktop';
+      
+      const ua = visit.userAgent ? visit.userAgent.toLowerCase() : '';
+      let os = 'Other';
+      if (ua.includes('win')) os = 'Windows';
+      else if (ua.includes('mac') && !ua.includes('iphone') && !ua.includes('ipad')) os = 'macOS';
+      else if (ua.includes('iphone') || ua.includes('ipad')) os = 'iOS';
+      else if (ua.includes('android')) os = 'Android';
+      else if (ua.includes('linux')) os = 'Linux';
+      
+      let browser = 'Other';
+      if (ua.includes('edg')) browser = 'Edge';
+      else if (ua.includes('chrome')) browser = 'Chrome';
+      else if (ua.includes('safari') && !ua.includes('chrome')) browser = 'Safari';
+      else if (ua.includes('firefox')) browser = 'Firefox';
+      
+      const referrer = visit.referrer || 'Direct';
+
+      return `"${date}","${time}","${country}","${city}","${device}","${os}","${browser}","${referrer}"`;
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const linkObj = document.createElement('a');
+    linkObj.href = url;
+    linkObj.setAttribute('download', `analytics_${link.urlCode}.csv`);
+    document.body.appendChild(linkObj);
+    linkObj.click();
+    document.body.removeChild(linkObj);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto">
       <div 
@@ -205,12 +252,21 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
               </a>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={handleDownloadCSV}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              Export CSV
+            </button>
+            <button 
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
         </div>
 
         <div className="p-6">
