@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -25,6 +25,7 @@ ChartJS.register(
 
 const LinkAnalyticsModal = ({ link, onClose }) => {
   const modalRef = useRef(null);
+  const [timeRange, setTimeRange] = useState('7D'); // '7D', '30D', 'ALL'
 
   // Close when clicking outside
   useEffect(() => {
@@ -47,16 +48,51 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
   const totalClicks = link.clicks || 0;
   const analytics = link.analytics || [];
 
-  // Calculate clicks for last 7 days
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i)); // 6 to 0 days ago
-    return {
-      date: d.toISOString().split('T')[0],
-      count: 0,
-      label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-    };
-  });
+  // Chart calculation (depends on timeRange)
+  let chartLabels = [];
+  let chartCounts = [];
+
+  if (timeRange === '7D') {
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return { date: d.toISOString().split('T')[0], count: 0, label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) };
+    });
+    analytics.forEach(v => {
+      const dStr = new Date(v.timestamp).toISOString().split('T')[0];
+      const match = days.find(d => d.date === dStr);
+      if (match) match.count++;
+    });
+    chartLabels = days.map(d => d.label);
+    chartCounts = days.map(d => d.count);
+  } else if (timeRange === '30D') {
+    const days = Array.from({ length: 30 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (29 - i));
+      return { date: d.toISOString().split('T')[0], count: 0, label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) };
+    });
+    analytics.forEach(v => {
+      const dStr = new Date(v.timestamp).toISOString().split('T')[0];
+      const match = days.find(d => d.date === dStr);
+      if (match) match.count++;
+    });
+    chartLabels = days.map(d => d.label);
+    chartCounts = days.map(d => d.count);
+  } else {
+    // ALL - group by month for the last 12 months
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (11 - i));
+      return { key: `${d.getFullYear()}-${d.getMonth()}`, count: 0, label: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }) };
+    });
+    analytics.forEach(v => {
+      const d = new Date(v.timestamp);
+      const match = months.find(m => m.key === `${d.getFullYear()}-${d.getMonth()}`);
+      if (match) match.count++;
+    });
+    chartLabels = months.map(m => m.label);
+    chartCounts = months.map(m => m.count);
+  }
 
   let topOS = { Windows: 0, macOS: 0, iOS: 0, Android: 0, Linux: 0, Other: 0 };
   let topBrowsers = { Chrome: 0, Safari: 0, Firefox: 0, Edge: 0, Other: 0 };
@@ -64,11 +100,6 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
   let deviceTypes = { Desktop: 0, Mobile: 0, Tablet: 0, SmartTV: 0, Other: 0 };
 
   analytics.forEach(visit => {
-    const visitDateStr = new Date(visit.timestamp).toISOString().split('T')[0];
-    const dayMatch = last7Days.find(d => d.date === visitDateStr);
-    if (dayMatch) {
-      dayMatch.count++;
-    }
 
     const ua = visit.userAgent ? visit.userAgent.toLowerCase() : '';
     if (ua.includes('win')) topOS.Windows++;
@@ -104,12 +135,12 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
 
   // Chart data
   const chartData = {
-    labels: last7Days.map(d => d.label),
+    labels: chartLabels,
     datasets: [
       {
         fill: true,
         label: 'Clicks',
-        data: last7Days.map(d => d.count),
+        data: chartCounts,
         borderColor: 'rgb(99, 102, 241)', // indigo-500
         backgroundColor: 'rgba(99, 102, 241, 0.1)',
         tension: 0.4,
@@ -185,11 +216,28 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
         <div className="p-6">
           {/* Main Chart */}
           <div className="mb-8">
-            <div className="flex items-baseline gap-3 mb-4">
-              <h3 className="text-lg font-bold text-slate-900">Traffic (Last 7 Days)</h3>
-              <span className="text-sm font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
-                {totalClicks} total clicks
-              </span>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-baseline gap-3">
+                <h3 className="text-lg font-bold text-slate-900">Traffic Activity</h3>
+                <span className="text-sm font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 hidden sm:inline-block">
+                  {totalClicks} total clicks
+                </span>
+              </div>
+              <div className="flex bg-slate-100 p-1 rounded-lg">
+                {['7D', '30D', 'ALL'].map(range => (
+                  <button
+                    key={range}
+                    onClick={() => setTimeRange(range)}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                      timeRange === range 
+                        ? 'bg-white text-slate-900 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    {range === 'ALL' ? 'All Time' : range}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="h-72 w-full p-4 border border-slate-100 rounded-xl bg-slate-50/50">
               <Line data={chartData} options={chartOptions} />
