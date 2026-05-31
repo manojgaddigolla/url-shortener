@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getUserLinks, deleteUserLink } from '../services/linkService';
+import { getUserLinks, deleteUserLink, updateUserLink } from '../services/linkService';
 import Spinner from '../components/Spinner';
 import LinkAnalyticsModal from '../components/LinkAnalyticsModal';
 
@@ -13,6 +13,8 @@ const DashboardPage = () => {
   const [isDeletingId, setIsDeletingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLinkAnalytics, setSelectedLinkAnalytics] = useState(null);
+  const [editingExpiryId, setEditingExpiryId] = useState(null);
+  const [newExpiryDays, setNewExpiryDays] = useState('');
 
   const { token, logout, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -73,6 +75,25 @@ const DashboardPage = () => {
       alert(err.message || 'Failed to delete URL.');
     } finally {
       setIsDeletingId(null);
+    }
+  };
+
+  const handleUpdateExpiry = async (id) => {
+    try {
+      if (!newExpiryDays) {
+        setEditingExpiryId(null);
+        return;
+      }
+      const updatedLinkResponse = await updateUserLink(token, id, { expiresInDays: newExpiryDays });
+      if (updatedLinkResponse.success) {
+        const updatedLinks = links.map(link => 
+          link._id === id ? updatedLinkResponse.data : link
+        );
+        setLinks(updatedLinks);
+        setEditingExpiryId(null);
+      }
+    } catch (err) {
+      console.error('Failed to update expiry', err);
     }
   };
 
@@ -358,14 +379,43 @@ const DashboardPage = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center text-slate-500 hidden md:table-cell">
-                          {link.expiresAt ? (
-                            isExpired ? (
-                              <span className="text-red-600 font-medium">Expired</span>
-                            ) : (
-                              formatDate(link.expiresAt)
-                            )
+                          {editingExpiryId === link._id ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <select 
+                                value={newExpiryDays}
+                                onChange={(e) => setNewExpiryDays(e.target.value)}
+                                className="text-xs border border-slate-300 rounded py-1 px-1 text-slate-700 bg-white"
+                              >
+                                <option value="">Select...</option>
+                                <option value="1">1 Day</option>
+                                <option value="7">7 Days</option>
+                                <option value="30">30 Days</option>
+                                <option value="never">Never</option>
+                              </select>
+                              <button onClick={() => handleUpdateExpiry(link._id)} className="p-1 text-green-600 hover:bg-green-50 rounded" title="Save">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                              </button>
+                              <button onClick={() => setEditingExpiryId(null)} className="p-1 text-slate-400 hover:bg-slate-100 rounded" title="Cancel">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                              </button>
+                            </div>
                           ) : (
-                            <span className="text-slate-400">Never</span>
+                            <div 
+                              className="flex items-center justify-center gap-2 group cursor-pointer" 
+                              onClick={() => { setEditingExpiryId(link._id); setNewExpiryDays(''); }}
+                              title="Click to edit expiry"
+                            >
+                              {link.expiresAt ? (
+                                isExpired ? (
+                                  <span className="text-red-600 font-medium">Expired</span>
+                                ) : (
+                                  formatDate(link.expiresAt)
+                                )
+                              ) : (
+                                <span className="text-slate-400">Never</span>
+                              )}
+                              <svg className="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </div>
                           )}
                         </td>
                         <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">

@@ -47,3 +47,24 @@ export const deleteUserLink = async (token, id) => {
     throw new Error('An unexpected error occurred while deleting link.');
   }
 };
+
+export const updateUserLink = async (token, id, data) => {
+  try {
+    const response = await axios({
+      method: 'PATCH',
+      url: `${API_URL}/${id}`,
+      headers: {
+        'x-auth-token': token,
+        'Content-Type': 'application/json',
+      },
+      data,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('API Error: Failed to update user link', error.response?.data || error);
+    if (error.response?.data) {
+      throw error.response.data;
+    }
+    throw new Error('An unexpected error occurred while updating link.');
+  }
+};
