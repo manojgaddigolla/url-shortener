@@ -15,6 +15,7 @@ const DashboardPage = () => {
   const [selectedLinkAnalytics, setSelectedLinkAnalytics] = useState(null);
   const [editingExpiryId, setEditingExpiryId] = useState(null);
   const [newExpiryDays, setNewExpiryDays] = useState('');
+  const [selectedQRLink, setSelectedQRLink] = useState(null);
 
   const { token, logout, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -357,7 +358,13 @@ const DashboardPage = () => {
                       <tr key={link._id} className={`transition-colors ${isExpired ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-slate-50/50'}`}>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=40x40&data=${encodeURIComponent(link.shortUrl)}`} alt="QR" className="w-10 h-10 border border-slate-200 rounded p-1 bg-white hidden sm:block" />
+                            <img 
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=40x40&data=${encodeURIComponent(link.shortUrl)}`} 
+                              alt="QR" 
+                              className="w-10 h-10 border border-slate-200 rounded p-1 bg-white hidden sm:block cursor-pointer hover:border-indigo-300 transition-colors" 
+                              onClick={() => setSelectedQRLink(link)}
+                              title="View QR Code"
+                            />
                             <div>
                               <a href={link.shortUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
                                 {link.shortUrl.replace(/^https?:\/\//, '')}
@@ -478,6 +485,36 @@ const DashboardPage = () => {
           link={selectedLinkAnalytics} 
           onClose={() => setSelectedLinkAnalytics(null)} 
         />
+      )}
+
+      {selectedQRLink && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto" onClick={() => setSelectedQRLink(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Scan QR Code</h3>
+            <p className="text-sm text-slate-500 mb-6 truncate px-4" title={selectedQRLink.shortUrl}>{selectedQRLink.shortUrl}</p>
+            <div className="flex justify-center mb-6">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(selectedQRLink.shortUrl)}`} 
+                alt="QR Code" 
+                className="w-64 h-64 border-2 border-slate-100 rounded-xl p-2"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => downloadQR(selectedQRLink.shortUrl, selectedQRLink.urlCode)}
+                className="flex-1 bg-indigo-600 text-white font-medium py-2 px-4 rounded-xl hover:bg-indigo-700 transition-colors"
+              >
+                Download
+              </button>
+              <button 
+                onClick={() => setSelectedQRLink(null)}
+                className="flex-1 bg-slate-100 text-slate-700 font-medium py-2 px-4 rounded-xl hover:bg-slate-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
