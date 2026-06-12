@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getUserLinks, deleteUserLink, updateUserLink } from '../services/linkService';
 import Spinner from '../components/Spinner';
 import LinkAnalyticsModal from '../components/LinkAnalyticsModal';
+import QRCode from 'react-qr-code';
 
 const DashboardPage = () => {
   const [links, setLinks] = useState([]);
@@ -104,15 +105,19 @@ const DashboardPage = () => {
     return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
   };
 
-  const downloadQR = async (shortUrl, urlCode) => {
+  const downloadQR = (shortUrl, urlCode) => {
     try {
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(shortUrl)}`;
-      const response = await fetch(qrUrl);
-      const blob = await response.blob();
+      const svg = document.getElementById(`qr-${urlCode}`);
+      if (!svg) {
+        alert('Please view the QR code first before downloading.');
+        return;
+      }
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = `qr-${urlCode}.png`;
+      link.download = `qr-${urlCode}.svg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -358,12 +363,13 @@ const DashboardPage = () => {
                       <tr key={link._id} className={`transition-colors ${isExpired ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-slate-50/50'}`}>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <img 
-                              src={`https://api.qrserver.com/v1/create-qr-code/?size=40x40&data=${encodeURIComponent(link.shortUrl)}`} 
-                              alt="QR" 
+                            <QRCode 
+                              id={`qr-thumb-${link.urlCode}`}
+                              value={link.shortUrl} 
+                              size={40}
                               className="w-10 h-10 border border-slate-200 rounded p-1 bg-white hidden sm:block cursor-pointer hover:border-indigo-300 transition-colors" 
                               onClick={() => setSelectedQRLink(link)}
-                              title="View QR Code"
+                              viewBox={`0 0 256 256`}
                             />
                             <div>
                               <a href={link.shortUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
@@ -436,7 +442,10 @@ const DashboardPage = () => {
                           </button>
                           <button 
                             className="px-3 py-1.5 text-xs rounded-md font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-all"
-                            onClick={() => downloadQR(link.shortUrl, link.urlCode)}
+                            onClick={() => {
+                              setSelectedQRLink(link);
+                              setTimeout(() => downloadQR(link.shortUrl, link.urlCode), 50);
+                            }}
                             title="Download QR Code"
                           >
                             <svg className="w-3.5 h-3.5 inline-block -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -493,10 +502,12 @@ const DashboardPage = () => {
             <h3 className="text-xl font-bold text-slate-900 mb-2">Scan QR Code</h3>
             <p className="text-sm text-slate-500 mb-6 truncate px-4" title={selectedQRLink.shortUrl}>{selectedQRLink.shortUrl}</p>
             <div className="flex justify-center mb-6">
-              <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(selectedQRLink.shortUrl)}`} 
-                alt="QR Code" 
+              <QRCode 
+                id={`qr-${selectedQRLink.urlCode}`}
+                value={selectedQRLink.shortUrl} 
+                size={256}
                 className="w-64 h-64 border-2 border-slate-100 rounded-xl p-2"
+                viewBox={`0 0 256 256`}
               />
             </div>
             <div className="flex gap-3">

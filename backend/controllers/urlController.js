@@ -63,13 +63,13 @@ const shortenUrl = async (req, res) => {
     return res.status(400).json({ success: false, error: 'Please provide a URL' });
   }
   if (!validUrl.isUri(longUrl)) {
-    return res.status(400).json({ success: false, error: 'Invalid URL format provided' });
+    return res.status(401).json({ success: false, error: 'Invalid base URL' });
   }
 
-  // Actively verify if the URL is reachable
+  // Validate the target URL is actually reachable and returns a success status
   const isReachable = await verifyUrlReachable(longUrl);
   if (!isReachable) {
-    return res.status(400).json({ success: false, error: 'The provided URL is not reachable or does not exist. Please check and try again.' });
+    return res.status(400).json({ success: false, error: 'The provided URL is unreachable or returned an error.' });
   }
 
   // Sanitize log to avoid PII leakage - log only hostname and path

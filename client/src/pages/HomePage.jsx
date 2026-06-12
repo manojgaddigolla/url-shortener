@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import QRCode from "react-qr-code";
 import { createShortUrl } from "../services/apiService";
 import Spinner from "../components/Spinner";
 
@@ -130,27 +131,28 @@ const HomePage = () => {
             <div className="flex flex-col md:flex-row gap-6 items-center">
               <div className="flex flex-col items-center gap-2 shrink-0">
                 <div className="bg-white p-2 border border-slate-200 rounded-lg shadow-sm">
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(shortUrlData.shortUrl)}`} 
-                    alt="QR Code" 
+                  <QRCode 
+                    id={`qr-${shortUrlData.urlCode}`}
+                    value={shortUrlData.shortUrl}
+                    size={96}
                     className="w-24 h-24 object-contain"
+                    viewBox={`0 0 256 256`}
                   />
                 </div>
                 <button 
                   onClick={() => {
-                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(shortUrlData.shortUrl)}`;
-                    fetch(qrUrl)
-                      .then(res => res.blob())
-                      .then(blob => {
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `qr-${shortUrlData.shortUrl.split('/').pop()}.png`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        window.URL.revokeObjectURL(url);
-                      });
+                    const svg = document.getElementById(`qr-${shortUrlData.urlCode}`);
+                    if (!svg) return;
+                    const svgData = new XMLSerializer().serializeToString(svg);
+                    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `qr-${shortUrlData.urlCode}.svg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
                   }}
                   className="text-xs text-slate-500 hover:text-indigo-600 flex items-center gap-1 font-medium transition-colors"
                 >
