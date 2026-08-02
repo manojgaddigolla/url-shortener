@@ -22,6 +22,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.6",
     "nanoid": "^5.1.6",
+    "svix": "^1.99.1",
     "ua-parser-js": "^2.0.10",
     "valid-url": "^1.0.9"
   },

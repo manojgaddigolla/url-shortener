@@ -25,6 +25,10 @@ connectDB();
 // Enable CORS for all routes
 app.use(cors());
 
+// Webhook route needs raw body, so mount it before express.json()
+const webhookRoutes = require('./routes/webhooks');
+app.use('/api/webhooks', webhookRoutes);
+
 app.use(express.json());
 app.use(clerkMiddleware());
 
