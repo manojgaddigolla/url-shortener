@@ -8,7 +8,10 @@ const connectDB = async () => {
             process.exit(1);
         }
 
-        const conn = await mongoose.connect(process.env.MONGO_URI);
+        const conn = await mongoose.connect(process.env.MONGO_URI, {
+            family: 4, // Force IPv4 to fix SSL alert 80 on Node v22 + Atlas
+            serverSelectionTimeoutMS: 5000
+        });
         console.log(`MongoDB connected successfully : ${conn.connection.host}`);
     } catch (error) {
         console.log(`Connection failed : ${error.message}`);

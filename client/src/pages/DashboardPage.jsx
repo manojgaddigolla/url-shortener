@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@clerk/react';
 import { getUserLinks, deleteUserLink, updateUserLink } from '../services/linkService';
 import Spinner from '../components/Spinner';
 import LinkAnalyticsModal from '../components/LinkAnalyticsModal';
 import QRCode from 'react-qr-code';
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
   const [links, setLinks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,39 +19,33 @@ const DashboardPage = () => {
   const [newExpiryDays, setNewExpiryDays] = useState('');
   const [selectedQRLink, setSelectedQRLink] = useState(null);
 
-  const { token, logout, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const { getToken, isLoaded } = useAuth();
 
   const fetchLinks = async () => {
-    if (token) {
-      try {
+    try {
+      const token = await getToken();
+      if (token) {
         const response = await getUserLinks(token);
         const normalizedData = Array.isArray(response) ? response : 
                                (response?.data && Array.isArray(response.data) ? response.data :
                                 response?.links && Array.isArray(response.links) ? response.links : []);
         setLinks(normalizedData);
-      } catch (err) {
-        console.error("Failed to fetch links:", err);
-        const errorMessage = err.error || 'Could not load your links at this time.';
-        setError(errorMessage);
-      } finally {
-        setIsLoading(false);
+      } else {
+        setError('You are not authorized to view this page. Please log in.');
       }
-    } else {
+    } catch (err) {
+      console.error("Failed to fetch links:", err);
+      setError(err.error || err.message || JSON.stringify(err) || 'Could not load your links at this time.');
+    } finally {
       setIsLoading(false);
-      setError('You are not authorized to view this page. Please log in.');
     }
   };
 
   useEffect(() => {
-    if (authLoading) return;
+    if (!isLoaded) return;
     fetchLinks();
-  }, [token, authLoading]);
+  }, [isLoaded]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const handleCopy = async (text, linkId) => {
     try {
@@ -70,6 +65,7 @@ const DashboardPage = () => {
     
     setIsDeletingId(linkId);
     try {
+      const token = await getToken();
       await deleteUserLink(token, linkId);
       setLinks(links.filter(link => link._id !== linkId));
     } catch (err) {
@@ -86,6 +82,7 @@ const DashboardPage = () => {
         setEditingExpiryId(null);
         return;
       }
+      const token = await getToken();
       const updatedLinkResponse = await updateUserLink(token, id, { expiresInDays: newExpiryDays });
       if (updatedLinkResponse.success) {
         const updatedLinks = links.map(link => 

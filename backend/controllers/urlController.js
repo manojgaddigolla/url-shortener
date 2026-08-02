@@ -1,4 +1,5 @@
 const validUrl = require('valid-url');
+const { getAuth } = require('@clerk/express');
 const Url = require('../models/Url');
 const geoip = require('geoip-lite');
 const UAParser = require('ua-parser-js');
@@ -86,7 +87,17 @@ const shortenUrl = async (req, res) => {
   }
 
   try {
-    let url = await Url.findOne({ longUrl: longUrl, user: req.user ? req.user.id : undefined });
+    let userId = undefined;
+    try {
+      const auth = getAuth(req);
+      if (auth && auth.userId) {
+        userId = auth.userId;
+      }
+    } catch (e) {
+      // Ignore if unauthenticated
+    }
+    
+    let url = await Url.findOne({ longUrl: longUrl, user: userId });
 
     if (url) {
       return res.status(200).json({ success: true, data: url });
@@ -110,10 +121,8 @@ const shortenUrl = async (req, res) => {
       expiresAt,
     };
 
-
-    if (req.user) {
-
-      newUrlData.user = req.user.id;
+    if (userId) {
+      newUrlData.user = userId;
     }
 
 

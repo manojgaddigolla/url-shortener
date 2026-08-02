@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import QRCode from "react-qr-code";
 import { createShortUrl } from "../services/apiService";
 import Spinner from "../components/Spinner";
+import { useAuth } from "@clerk/react";
 
 const HomePage = () => {
 
@@ -12,6 +13,7 @@ const HomePage = () => {
   const [isCopied, setIsCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const { getToken } = useAuth();
 
   const validateUrl = () => {
     const errors = {};
@@ -47,7 +49,8 @@ const HomePage = () => {
     }
 
     try {
-      const data = await createShortUrl(longUrl, expiresInDays || undefined);
+      const token = await getToken();
+      const data = await createShortUrl(longUrl, expiresInDays || undefined, token);
       setShortUrlData(data);
     } catch (err) {
       setServerError(err.error || err.message || 'An error occurred.');

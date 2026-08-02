@@ -1,17 +1,9 @@
 import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Link, useLocation } from 'react-router-dom';
+import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/react";
 
 const Navbar = () => {
-  const { isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -23,33 +15,32 @@ const Navbar = () => {
         </div>
 
         <ul className="flex gap-4 sm:gap-6 items-center text-sm font-semibold">
-          {isAuthenticated ? (
-            <>
-              <li>
-                <Link to="/dashboard" className={`transition-colors duration-200 ${isActive('/dashboard') ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600'}`}>
-                  Dashboard
-                </Link>
-              </li>
-              <li>
-                <button onClick={handleLogout} className="saas-btn-secondary px-4 py-2">
-                  Logout
-                </button>
-              </li>
-            </>
-          ) : (
-            <>
-              <li>
-                <Link to="/login" className={`transition-colors duration-200 ${isActive('/login') ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600'}`}>
+          <Show when="signed-in">
+            <li>
+              <Link to="/dashboard" className={`transition-colors duration-200 ${isActive('/dashboard') ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600'}`}>
+                Dashboard
+              </Link>
+            </li>
+            <li>
+              <UserButton afterSignOutUrl="/" />
+            </li>
+          </Show>
+          <Show when="signed-out">
+            <li>
+              <SignInButton mode="modal">
+                <button className="transition-colors duration-200 text-slate-600 hover:text-indigo-600 font-semibold">
                   Login
-                </Link>
-              </li>
-              <li>
-                <Link to="/register" className="saas-btn-primary px-5 py-2">
+                </button>
+              </SignInButton>
+            </li>
+            <li>
+              <SignUpButton mode="modal">
+                <button className="saas-btn-primary px-5 py-2 rounded font-semibold">
                   Register
-                </Link>
-              </li>
-            </>
-          )}
+                </button>
+              </SignUpButton>
+            </li>
+          </Show>
         </ul>
       </div>
     </nav>

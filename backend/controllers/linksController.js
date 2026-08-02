@@ -1,13 +1,15 @@
 const Url = require('../models/Url');
+const { getAuth } = require('@clerk/express');
 
 const getMyLinks = async (req, res) => {
   try {
 
-    if (!req.user) {
+    const { userId } = getAuth(req);
+    if (!userId) {
       return res.status(401).json({ success: false, error: 'Not authorized to access this route' });
     }
 
-    const links = await Url.find({ user: req.user.id }).sort({ date: -1 });
+    const links = await Url.find({ user: userId }).sort({ date: -1 });
 
     res.status(200).json({
       success: true,
@@ -23,7 +25,8 @@ const getMyLinks = async (req, res) => {
 
 const deleteLink = async (req, res) => {
   try {
-    if (!req.user) {
+    const { userId } = getAuth(req);
+    if (!userId) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
 
@@ -34,7 +37,7 @@ const deleteLink = async (req, res) => {
     }
 
     // Verify the user owns the link
-    if (link.user.toString() !== req.user.id) {
+    if (link.user !== userId) {
       return res.status(401).json({ success: false, error: 'Not authorized to delete this link' });
     }
 
@@ -49,7 +52,8 @@ const deleteLink = async (req, res) => {
 
 const updateLink = async (req, res) => {
   try {
-    if (!req.user) {
+    const { userId } = getAuth(req);
+    if (!userId) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
 
@@ -61,7 +65,7 @@ const updateLink = async (req, res) => {
     }
 
     // Verify ownership
-    if (link.user.toString() !== req.user.id) {
+    if (link.user !== userId) {
       return res.status(401).json({ success: false, error: 'Not authorized to update this link' });
     }
 

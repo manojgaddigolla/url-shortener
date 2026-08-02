@@ -9,7 +9,7 @@ export const getUserLinks = async (token) => {
       method: 'GET',
       url: `${API_URL}/my-links`,
       headers: {
-        'x-auth-token': token,
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -35,7 +35,7 @@ export const deleteUserLink = async (token, id) => {
       method: 'DELETE',
       url: `${API_URL}/${id}`,
       headers: {
-        'x-auth-token': token,
+        Authorization: `Bearer ${token}`,
       },
     });
     return response.data;
@@ -54,7 +54,7 @@ export const updateUserLink = async (token, id, data) => {
       method: 'PATCH',
       url: `${API_URL}/${id}`,
       headers: {
-        'x-auth-token': token,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       data,

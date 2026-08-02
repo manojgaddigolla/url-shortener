@@ -11,6 +11,8 @@ const errorHandler = require('./middleware/errorMiddleware');
 const connectDB = require('./config/db');
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const { clerkMiddleware } = require('@clerk/express');
 const app = express();
 
 // Trust proxy - enable if behind a reverse proxy (nginx, AWS ELB, Heroku, etc.)
@@ -24,9 +26,7 @@ connectDB();
 app.use(cors());
 
 app.use(express.json());
-
-const authRoutes = require('./routes/auth');
-app.use('/api/auth', authRoutes);
+app.use(clerkMiddleware());
 
 const linksRoutes = require('./routes/links');
 app.use('/api/links', linksRoutes);
@@ -36,6 +36,14 @@ app.use('/api/short', urlRoutes);
 
 const indexRoutes = require('./routes/index');
 app.use('/', indexRoutes);
+
+// Serve frontend in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
+}
 
 app.use(errorHandler);
 

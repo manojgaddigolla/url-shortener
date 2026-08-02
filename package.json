@@ -1,0 +1,15 @@
+{
+  "name": "url-shortener-root",
+  "version": "1.0.0",
+  "description": "Root package.json for deploying MERN stack to Render",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "build": "npm run install-backend && npm run install-client && npm run build-client",
+    "install-backend": "cd backend && npm install",
+    "install-client": "cd client && npm install",
+    "build-client": "cd client && npm run build"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

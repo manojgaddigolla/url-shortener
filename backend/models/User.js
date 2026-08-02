@@ -1,31 +1,25 @@
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema({
-  name: {
+const UserSchema = new mongoose.Schema({
+  clerkUserId: {
     type: String,
-    required: [true, 'Please provide a name'],
+    required: true,
+    unique: true,
+    index: true,
   },
-
   email: {
     type: String,
-    required: [true, 'Please provide an email'],
-    unique: true,
-    lowercase: true,
-    trim: true,
-    match: [
-      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/,
-      'Please provide a valid email address'
-    ]
+    required: true,
   },
-
-  password: {
+  firstName: {
     type: String,
-    required: [true, 'Please provide a password'],
-    minlength: 8,
-    select: false,
   },
-}, {
-  timestamps: true,
-});
+  lastName: {
+    type: String,
+  },
+  imageUrl: {
+    type: String,
+  }
+}, { timestamps: true });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', UserSchema);
