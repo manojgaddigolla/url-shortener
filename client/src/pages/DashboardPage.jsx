@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@clerk/react';
+import { useAuth } from '@clerk/clerk-react';
 import { getUserLinks, deleteUserLink, updateUserLink } from '../services/linkService';
 import Spinner from '../components/Spinner';
 import LinkAnalyticsModal from '../components/LinkAnalyticsModal';

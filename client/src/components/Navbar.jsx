@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/react";
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
 
 const Navbar = () => {
   const location = useLocation();
@@ -15,7 +15,7 @@ const Navbar = () => {
         </div>
 
         <ul className="flex gap-4 sm:gap-6 items-center text-sm font-semibold">
-          <Show when="signed-in">
+          <SignedIn>
             <li>
               <Link to="/dashboard" className={`transition-colors duration-200 ${isActive('/dashboard') ? 'text-indigo-600' : 'text-slate-600 hover:text-indigo-600'}`}>
                 Dashboard
@@ -24,8 +24,8 @@ const Navbar = () => {
             <li>
               <UserButton afterSignOutUrl="/" />
             </li>
-          </Show>
-          <Show when="signed-out">
+          </SignedIn>
+          <SignedOut>
             <li>
               <SignInButton mode="modal">
                 <button className="transition-colors duration-200 text-slate-600 hover:text-indigo-600 font-semibold">
@@ -40,7 +40,7 @@ const Navbar = () => {
                 </button>
               </SignUpButton>
             </li>
-          </Show>
+          </SignedOut>
         </ul>
       </div>
     </nav>

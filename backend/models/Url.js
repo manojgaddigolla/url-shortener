@@ -69,4 +69,8 @@ const UrlSchema = new mongoose.Schema({
 
 UrlSchema.index({ user: 1, date: -1 });
 
+// TTL Index: Automatically delete documents when expiresAt is reached.
+// If expiresAt is null, the document will never be automatically deleted.
+UrlSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
 module.exports = mongoose.model('Url', UrlSchema);

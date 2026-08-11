@@ -1,5 +1,5 @@
 import { Route, Routes, BrowserRouter } from "react-router-dom";
-import { Show, RedirectToSignIn } from "@clerk/react";
+import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 
 import HomePage from "./pages/HomePage";
 import DashboardPage from "./pages/DashboardPage";
@@ -16,12 +16,12 @@ function App() {
             <Route path="/dashboard"
               element={
                 <>
-                  <Show when="signed-in">
+                  <SignedIn>
                     <DashboardPage />
-                  </Show>
-                  <Show when="signed-out">
+                  </SignedIn>
+                  <SignedOut>
                     <RedirectToSignIn />
-                  </Show>
+                  </SignedOut>
                 </>
               } 
             />

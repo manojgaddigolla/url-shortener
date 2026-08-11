@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import QRCode from "react-qr-code";
 import { createShortUrl } from "../services/apiService";
 import Spinner from "../components/Spinner";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@clerk/clerk-react";
 
 const HomePage = () => {
 
