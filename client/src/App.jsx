@@ -2,6 +2,7 @@ import { Route, Routes, BrowserRouter } from "react-router-dom";
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 
 import HomePage from "./pages/HomePage";
+import ShortenPage from "./pages/ShortenPage";
 import DashboardPage from "./pages/DashboardPage";
 import Navbar from "./components/Navbar";
 
@@ -13,6 +14,7 @@ function App() {
         <main className="flex-grow container mx-auto px-4 py-8 md:py-12">
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/shorten" element={<ShortenPage />} />
             <Route path="/dashboard"
               element={
                 <>

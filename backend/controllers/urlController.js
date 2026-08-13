@@ -17,7 +17,7 @@ const getNanoid = async () => {
 
 
 const shortenUrl = async (req, res) => {
-  const { longUrl, expiresInDays } = req.body;
+  const { longUrl, expiresInDays, customAlias } = req.body;
 
   if (!longUrl) {
     return res.status(400).json({ success: false, error: 'Please provide a URL' });
@@ -26,7 +26,16 @@ const shortenUrl = async (req, res) => {
     return res.status(401).json({ success: false, error: 'Invalid base URL' });
   }
 
-
+  // Validate custom alias if provided
+  if (customAlias) {
+    const aliasRegex = /^[a-zA-Z0-9-]+$/;
+    if (!aliasRegex.test(customAlias)) {
+      return res.status(400).json({ success: false, error: 'Custom alias can only contain letters, numbers, and hyphens.' });
+    }
+    if (customAlias.length > 30) {
+      return res.status(400).json({ success: false, error: 'Custom alias cannot exceed 30 characters.' });
+    }
+  }
 
   // Sanitize log to avoid PII leakage - log only hostname and path
   try {
@@ -52,14 +61,25 @@ const shortenUrl = async (req, res) => {
       // Ignore if unauthenticated
     }
     
-    let url = await Url.findOne({ longUrl: longUrl, user: userId });
-
-    if (url) {
-      return res.status(200).json({ success: true, data: url });
+    // Check if the custom alias is already taken
+    if (customAlias) {
+      const existingAlias = await Url.findOne({ urlCode: customAlias });
+      if (existingAlias) {
+        return res.status(400).json({ success: false, error: 'Custom alias is already in use. Please choose another one.' });
+      }
+    } else {
+      // If no custom alias is provided, check if user already shortened this longUrl
+      let url = await Url.findOne({ longUrl: longUrl, user: userId });
+      if (url) {
+        return res.status(200).json({ success: true, data: url });
+      }
     }
 
-    const nanoid = await getNanoid();
-    const urlCode = nanoid(7);
+    let urlCode = customAlias;
+    if (!urlCode) {
+      const nanoid = await getNanoid();
+      urlCode = nanoid(7);
+    }
 
     const shortUrl = `${process.env.BASE_URL}/${urlCode}`;
 

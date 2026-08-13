@@ -1,194 +1,99 @@
-import React, { useState } from "react";
-import QRCode from "react-qr-code";
-import { createShortUrl } from "../services/apiService";
-import Spinner from "../components/Spinner";
-import { useAuth } from "@clerk/clerk-react";
+import React from "react";
+import { Link } from "react-router-dom";
+import { SignedOut, SignUpButton } from "@clerk/clerk-react";
 
 const HomePage = () => {
 
-  const [longUrl, setLongUrl] = useState('');
-  const [expiresInDays, setExpiresInDays] = useState('');
-  const [shortUrlData, setShortUrlData] = useState(null);
-  const [serverError, setServerError] = useState('');
-  const [isCopied, setIsCopied] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [formErrors, setFormErrors] = useState({});
-  const { getToken } = useAuth();
-
-  const validateUrl = () => {
-    const errors = {};
-    const urlPattern = new RegExp('^(https?:\\/\\/)' +
-      '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' +
-      '((\\d{1,3}\\.){3}\\d{1,3}))' +
-      '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' +
-      '(\\?[;&a-z\\d%_.~+=-]*)?' +
-      '(\\#[-a-z\\d_]*)?$', 'i');
-
-    if (!longUrl) {
-      errors.longUrl = 'URL field cannot be empty.';
-    } else if (!urlPattern.test(longUrl)) {
-      errors.longUrl = 'Please enter a valid URL (e.g., https://example.com).';
-    }
-    return errors;
-  };
-
-  const handleSubmit = async (e) => {
-
-    e.preventDefault();
-    setIsCopied(false);
-    setServerError('');
-    setShortUrlData(null); // Clear previous result
-    setIsLoading(true);
-
-    const validationErrors = validateUrl();
-    setFormErrors(validationErrors);
-
-    if (Object.keys(validationErrors).length > 0) {
-      setIsLoading(false); // Clear loading state on validation failure
-      return;
-    }
-
-    try {
-      const token = await getToken();
-      const data = await createShortUrl(longUrl, expiresInDays || undefined, token);
-      setShortUrlData(data);
-    } catch (err) {
-      setServerError(err.error || err.message || 'An error occurred.');
-    } finally {
-      setIsLoading(false);
-    }
-
-  };
-
-  const handleCopy = async () => {
-    if (!shortUrlData || !shortUrlData.shortUrl) return;
-
-    try {
-      await navigator.clipboard.writeText(shortUrlData.shortUrl);
-      setIsCopied(true);
-      setTimeout(() => {
-        setIsCopied(false);
-      }, 2000);
-    } catch (err) {
-      console.error('Failed to copy URL: ', err);
-      alert('Failed to copy URL.');
-    }
-  }
-
   return (
-    <div className="max-w-4xl mx-auto mt-8 md:mt-16">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight text-slate-900">
-          Simplify Your Links
-        </h1>
-        <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto">
-          Create short, memorable links in seconds. Perfect for social media, marketing campaigns, and everyday sharing.
-        </p>
-      </div>
+    <div className="flex flex-col min-h-screen">
+      {/* 1. HERO SECTION */}
+      <section className="relative overflow-hidden pt-16 pb-24 lg:pt-24 lg:pb-32">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-white -z-10" />
+        {/* Decorative Background Blob */}
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-50 -z-10" />
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-blue-100 rounded-full blur-3xl opacity-50 -z-10" />
 
-      <div className="saas-card p-6 md:p-10 mb-8">
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col md:flex-row gap-4">
-          <div className="flex-grow flex flex-col relative">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-            </div>
-            <input
-              type="url"
-              placeholder="Paste your long URL here..."
-              value={longUrl}
-              onChange={(e) => setLongUrl(e.target.value)}
-              disabled={isLoading}
-              className="saas-input w-full pl-12 pr-4 py-4 text-lg"
-            />
-            {formErrors.longUrl && (
-              <p className="text-red-500 text-sm mt-2 font-medium">{formErrors.longUrl}</p>
-            )}
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 tracking-tight text-slate-900 leading-tight">
+            Links that <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500">mean business</span>.
+          </h1>
+          <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-12">
+            Build your brand, track your clicks, and manage your links in one unified platform.
+          </p>
+
+          <Link 
+            to="/shorten" 
+            className="inline-flex items-center justify-center bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-indigo-700 hover:scale-105 transition-all shadow-xl shadow-indigo-200"
+          >
+            Start Shortening Now
+            <svg className="w-5 h-5 ml-2 -mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+          </Link>
+        </div>
+      </section>
+
+      {/* 2. FEATURES GRID */}
+      <section className="py-20 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Everything you need, nothing you don't</h2>
+            <p className="text-slate-600 text-lg">A powerful feature set designed for modern creators and businesses.</p>
           </div>
           
-          <div className="flex-grow md:max-w-[180px] flex flex-col relative">
-            <select
-              value={expiresInDays}
-              onChange={(e) => setExpiresInDays(e.target.value)}
-              disabled={isLoading}
-              className="saas-input w-full px-4 py-4 text-lg appearance-none bg-white cursor-pointer"
-            >
-              <option value="">Never Expires</option>
-              <option value="1">1 Day</option>
-              <option value="7">7 Days</option>
-              <option value="30">30 Days</option>
-            </select>
-            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 mb-6">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Advanced Analytics</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Track precisely who is clicking your links. View geographic locations, device types, and referring websites in real-time.
+              </p>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-6">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Enterprise Security</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Secured by Clerk authentication. Your data is protected by industry-standard encryption and route protection.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 mb-6">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Automated Cleanup</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Set expiration dates on your links. Our MongoDB background workers will automatically clean up expired links.
+              </p>
             </div>
           </div>
+        </div>
+      </section>
 
-          <button type="submit" disabled={isLoading} className="saas-btn-primary px-8 py-4 text-lg md:w-auto w-full min-w-[140px]">
-            {isLoading ? <Spinner size="small" /> : 'Shorten URL'}
-          </button>
-        </form>
-
-        {shortUrlData && (
-          <div className="mt-8 pt-8 border-t border-slate-100 animate-[fade-in_0.3s_ease-out]" >
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Your Link is Ready</h3>
-            
-            <div className="flex flex-col md:flex-row gap-6 items-center">
-              <div className="flex flex-col items-center gap-2 shrink-0">
-                <div className="bg-white p-2 border border-slate-200 rounded-lg shadow-sm">
-                  <QRCode 
-                    id={`qr-${shortUrlData.urlCode}`}
-                    value={shortUrlData.shortUrl}
-                    size={96}
-                    className="w-24 h-24 object-contain"
-                    viewBox={`0 0 256 256`}
-                  />
-                </div>
-                <button 
-                  onClick={() => {
-                    const svg = document.getElementById(`qr-${shortUrlData.urlCode}`);
-                    if (!svg) return;
-                    const svgData = new XMLSerializer().serializeToString(svg);
-                    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `qr-${shortUrlData.urlCode}.svg`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                  }}
-                  className="text-xs text-slate-500 hover:text-indigo-600 flex items-center gap-1 font-medium transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                  Download
-                </button>
-              </div>
-              
-              <div className="flex-grow w-full">
-                <div className="flex flex-col sm:flex-row justify-between items-center bg-slate-50 p-4 rounded-lg border border-slate-200" >
-                  <a
-                    href={shortUrlData.shortUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-lg text-indigo-600 break-all hover:text-indigo-800 hover:underline transition-colors"
-                  >
-                    {shortUrlData.shortUrl}
-                  </a>
-                  <button type="button" className={`mt-4 sm:mt-0 w-full sm:w-auto px-6 py-2 rounded-md text-sm font-medium transition-all ${isCopied ? 'bg-emerald-500 text-white shadow-sm' : 'saas-btn-secondary'}`} onClick={handleCopy}>
-                    {isCopied ? 'Copied!' : 'Copy Link'}
-                  </button>
-                </div>
-                <p className="text-sm text-slate-400 mt-3 flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                  Share this link or scan the QR code to visit the destination.
-                </p>
-              </div>
-            </div>
+      {/* 3. CTA SECTION */}
+      <SignedOut>
+        <section className="bg-indigo-600 py-20 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
+          <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Ready to take control of your links?</h2>
+            <p className="text-indigo-100 text-lg mb-10 max-w-2xl mx-auto">
+              Create an account for free today to unlock the dashboard, view link analytics, and manage your portfolio.
+            </p>
+            <SignUpButton mode="modal">
+              <button className="bg-white text-indigo-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-indigo-50 hover:scale-105 transition-all shadow-xl">
+                Get Started for Free
+              </button>
+            </SignUpButton>
           </div>
-        )}
+        </section>
+      </SignedOut>
 
-        {serverError && <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-center font-medium">{serverError}</div>}
-      </div>
     </div>
   );
 };
