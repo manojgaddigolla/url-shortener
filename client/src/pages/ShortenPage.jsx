@@ -4,13 +4,13 @@ import { createShortUrl } from "../services/apiService";
 import Spinner from "../components/Spinner";
 import { useAuth } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const ShortenPage = () => {
   const [longUrl, setLongUrl] = useState('');
   const [expiresInDays, setExpiresInDays] = useState('');
   const [customAlias, setCustomAlias] = useState('');
   const [shortUrlData, setShortUrlData] = useState(null);
-  const [serverError, setServerError] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -46,7 +46,6 @@ const ShortenPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsCopied(false);
-    setServerError('');
     setShortUrlData(null); 
     setIsLoading(true);
 
@@ -62,8 +61,9 @@ const ShortenPage = () => {
       const token = await getToken();
       const data = await createShortUrl(longUrl, expiresInDays || undefined, customAlias || undefined, token);
       setShortUrlData(data);
+      toast.success('URL shortened successfully!');
     } catch (err) {
-      setServerError(err.error || err.message || 'An error occurred.');
+      toast.error(err.error || err.message || 'An error occurred.');
     } finally {
       setIsLoading(false);
     }
@@ -75,10 +75,11 @@ const ShortenPage = () => {
     try {
       await navigator.clipboard.writeText(shortUrlData.shortUrl);
       setIsCopied(true);
+      toast.success('Copied to clipboard!');
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy URL: ', err);
-      alert('Failed to copy URL.');
+      toast.error('Failed to copy URL.');
     }
   }
 
@@ -180,13 +181,6 @@ const ShortenPage = () => {
 
             </div>
 
-            {/* Error Message */}
-            {serverError && (
-              <div className="mt-8 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center gap-3 animate-[fade-in_0.3s_ease-out]">
-                <svg className="w-6 h-6 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                <span className="font-semibold">{serverError}</span>
-              </div>
-            )}
           </div>
         </form>
       </div>

@@ -2,19 +2,25 @@
 
 @layer utilities {
   .saas-card {
-    @apply bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-xl;
+    @apply bg-white border border-slate-200/60 shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl;
   }
   .saas-input {
-    @apply bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all rounded-lg;
+    @apply bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all rounded-xl;
   }
   .saas-nav {
-    @apply bg-white border-b border-slate-200 shadow-sm;
+    @apply bg-white/70 backdrop-blur-xl border-b border-white/20 shadow-sm;
   }
   .saas-btn-primary {
-    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm transition-colors rounded-lg flex justify-center items-center;
+    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md shadow-indigo-500/20 transition-all rounded-xl flex justify-center items-center;
   }
   .saas-btn-secondary {
-    @apply bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium shadow-sm transition-colors rounded-lg flex justify-center items-center;
+    @apply bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold shadow-sm transition-all rounded-xl flex justify-center items-center;
+  }
+  .bg-grid-pattern {
+    background-size: 40px 40px;
+    background-image: 
+      linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
   }
 }
 
@@ -27,9 +33,10 @@ body {
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f8fafc;
 }
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;

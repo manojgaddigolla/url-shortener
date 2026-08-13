@@ -5,6 +5,7 @@ import { getUserLinks, deleteUserLink, updateUserLink } from '../services/linkSe
 import Spinner from '../components/Spinner';
 import LinkAnalyticsModal from '../components/LinkAnalyticsModal';
 import QRCode from 'react-qr-code';
+import toast from 'react-hot-toast';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const DashboardPage = () => {
   const [error, setError] = useState('');
   const [copiedLinkId, setCopiedLinkId] = useState(null);
   const [isDeletingId, setIsDeletingId] = useState(null);
+  const [linkToDelete, setLinkToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLinkAnalytics, setSelectedLinkAnalytics] = useState(null);
   const [editingExpiryId, setEditingExpiryId] = useState(null);
@@ -51,28 +53,30 @@ const DashboardPage = () => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedLinkId(linkId);
+      toast.success('Copied to clipboard!');
       setTimeout(() => {
         setCopiedLinkId(null);
       }, 2000);
     } catch (err) {
       console.error('Failed to copy URL: ', err);
-      alert('Failed to copy URL.');
+      toast.error('Failed to copy URL.');
     }
   };
 
-  const handleDelete = async (linkId) => {
-    if (!window.confirm('Are you sure you want to delete this link?')) return;
-    
-    setIsDeletingId(linkId);
+  const confirmDelete = async () => {
+    if (!linkToDelete) return;
+    setIsDeletingId(linkToDelete);
     try {
       const token = await getToken();
-      await deleteUserLink(token, linkId);
-      setLinks(links.filter(link => link._id !== linkId));
+      await deleteUserLink(token, linkToDelete);
+      setLinks((prevLinks) => prevLinks.filter(link => link._id !== linkToDelete));
+      toast.success('Link deleted successfully!');
     } catch (err) {
       console.error('Failed to delete URL: ', err);
-      alert(err.message || 'Failed to delete URL.');
+      toast.error(err.message || 'Failed to delete URL.');
     } finally {
       setIsDeletingId(null);
+      setLinkToDelete(null);
     }
   };
 
@@ -90,9 +94,11 @@ const DashboardPage = () => {
         );
         setLinks(updatedLinks);
         setEditingExpiryId(null);
+        toast.success('Expiry updated successfully!');
       }
     } catch (err) {
       console.error('Failed to update expiry', err);
+      toast.error('Failed to update expiry');
     }
   };
 
@@ -106,7 +112,7 @@ const DashboardPage = () => {
     try {
       const svg = document.getElementById(`qr-${urlCode}`);
       if (!svg) {
-        alert('Please view the QR code first before downloading.');
+        toast.error('Please view the QR code first before downloading.');
         return;
       }
       const svgData = new XMLSerializer().serializeToString(svg);
@@ -119,9 +125,10 @@ const DashboardPage = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(downloadUrl);
+      toast.success('QR Code downloaded!');
     } catch (err) {
       console.error('Failed to download QR code:', err);
-      alert('Failed to download QR code.');
+      toast.error('Failed to download QR code.');
     }
   };
 
@@ -430,35 +437,44 @@ const DashboardPage = () => {
                         </td>
                         <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
                           <button 
-                            className="px-3 py-1.5 text-xs rounded-md font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-all"
+                            className="p-2 rounded-md bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all"
                             onClick={() => setSelectedLinkAnalytics(link)}
                             title="View Analytics"
                           >
-                            <svg className="w-3.5 h-3.5 inline-block -mt-0.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
-                            Stats
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                           </button>
                           <button 
-                            className="px-3 py-1.5 text-xs rounded-md font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-all"
+                            className="p-2 rounded-md bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all"
                             onClick={() => {
                               setSelectedQRLink(link);
                               setTimeout(() => downloadQR(link.shortUrl, link.urlCode), 50);
                             }}
                             title="Download QR Code"
                           >
-                            <svg className="w-3.5 h-3.5 inline-block -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                           </button>
                           <button 
-                            className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all ${copiedLinkId === link._id ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`} 
+                            className={`p-2 rounded-md transition-all ${copiedLinkId === link._id ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50'}`} 
                             onClick={() => handleCopy(link.shortUrl, link._id)}
+                            title="Copy Link"
                           >
-                            {copiedLinkId === link._id ? 'Copied' : 'Copy'}
+                            {copiedLinkId === link._id ? (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                            )}
                           </button>
                           <button 
-                            className="px-3 py-1.5 text-xs rounded-md font-medium bg-white border border-red-200 text-red-600 hover:bg-red-50 transition-all disabled:opacity-50"
-                            onClick={() => handleDelete(link._id)}
+                            className="p-2 rounded-md bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all disabled:opacity-50"
+                            onClick={() => setLinkToDelete(link._id)}
                             disabled={isDeletingId === link._id}
+                            title="Delete Link"
                           >
-                            {isDeletingId === link._id ? '...' : 'Delete'}
+                            {isDeletingId === link._id ? (
+                               <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            ) : (
+                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            )}
                           </button>
                         </td>
                       </tr>
@@ -519,6 +535,34 @@ const DashboardPage = () => {
                 className="flex-1 bg-slate-100 text-slate-700 font-medium py-2 px-4 rounded-xl hover:bg-slate-200 transition-colors"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {linkToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto" onClick={() => setLinkToDelete(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Link</h3>
+            <p className="text-sm text-slate-500 mb-6">Are you sure you want to permanently delete this link? This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button 
+                onClick={confirmDelete}
+                className="flex-1 bg-red-600 text-white font-medium py-2.5 px-4 rounded-xl hover:bg-red-700 transition-colors shadow-sm shadow-red-200"
+              >
+                Delete
+              </button>
+              <button 
+                onClick={() => setLinkToDelete(null)}
+                className="flex-1 bg-slate-100 text-slate-700 font-medium py-2.5 px-4 rounded-xl hover:bg-slate-200 transition-colors"
+              >
+                Cancel
               </button>
             </div>
           </div>

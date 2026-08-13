@@ -1,5 +1,6 @@
 import { Route, Routes, BrowserRouter } from "react-router-dom";
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
+import { Toaster } from "react-hot-toast";
 
 import HomePage from "./pages/HomePage";
 import ShortenPage from "./pages/ShortenPage";
@@ -10,6 +11,7 @@ function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
+        <Toaster position="top-center" toastOptions={{ duration: 4000, style: { background: '#334155', color: '#fff', borderRadius: '12px' } }} />
         <Navbar />
         <main className="flex-grow container mx-auto px-4 py-8 md:py-12">
           <Routes>
