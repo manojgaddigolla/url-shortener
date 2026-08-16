@@ -65,6 +65,11 @@ const UrlSchema = new mongoose.Schema({
     required: false,
     index: true,
   },
+  
+  isPinned: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 UrlSchema.index({ user: 1, date: -1 });

@@ -99,7 +99,7 @@ const updateLink = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
 
-    const { expiresInDays } = req.body;
+    const { expiresInDays, isPinned } = req.body;
     const link = await Url.findById(req.params.id);
 
     if (!link) {
@@ -111,18 +111,25 @@ const updateLink = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Not authorized to update this link' });
     }
 
-    let expiresAt = undefined;
-    if (expiresInDays === null || expiresInDays === 'never') {
-      expiresAt = null;
-    } else if (expiresInDays && !isNaN(expiresInDays)) {
-      expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + parseInt(expiresInDays));
+    if (expiresInDays !== undefined) {
+      let expiresAt = undefined;
+      if (expiresInDays === null || expiresInDays === 'never') {
+        expiresAt = null;
+      } else if (expiresInDays && !isNaN(expiresInDays)) {
+        expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + parseInt(expiresInDays));
+      }
+
+      if (expiresAt !== undefined) {
+        link.expiresAt = expiresAt;
+      }
     }
 
-    if (expiresAt !== undefined) {
-      link.expiresAt = expiresAt;
-      await link.save();
+    if (isPinned !== undefined) {
+      link.isPinned = Boolean(isPinned);
     }
+
+    await link.save();
 
     res.status(200).json({ success: true, data: link });
   } catch (err) {
