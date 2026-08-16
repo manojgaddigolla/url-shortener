@@ -89,3 +89,24 @@ export const getAIInsights = async (token, id, question, context) => {
     throw new Error('An unexpected error occurred while fetching AI insights.');
   }
 };
+
+export const suggestAliases = async (token, longUrl) => {
+  try {
+    const response = await axios({
+      method: 'POST',
+      url: `${API_URL}/suggest-aliases`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      data: { longUrl },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('API Error: Failed to suggest aliases', error.response?.data || error);
+    if (error.response?.data) {
+      throw error.response.data;
+    }
+    throw new Error('An unexpected error occurred while suggesting aliases.');
+  }
+};

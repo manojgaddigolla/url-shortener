@@ -131,9 +131,87 @@ const updateLink = async (req, res) => {
   }
 };
 
+const suggestAliases = async (req, res) => {
+  try {
+    const { userId } = getAuth(req);
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
+
+    const { longUrl } = req.body;
+    if (!longUrl) {
+      return res.status(400).json({ success: false, error: 'longUrl is required' });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ success: false, error: 'AI features are not configured.' });
+    }
+
+    // Attempt to fetch website metadata
+    let pageTitle = '';
+    let pageDescription = '';
+    
+    try {
+      const fetchResponse = await fetch(longUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        signal: AbortSignal.timeout(3000) // 3 second timeout
+      });
+      const htmlText = await fetchResponse.text();
+      
+      const titleMatch = htmlText.match(/<title[^>]*>([^<]+)<\/title>/i);
+      if (titleMatch) pageTitle = titleMatch[1].trim();
+
+      const descMatch = htmlText.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i) || 
+                        htmlText.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["'][^>]*>/i);
+      if (descMatch) pageDescription = descMatch[1].trim();
+    } catch (fetchErr) {
+      console.warn('Could not fetch URL metadata (might be blocked or timeout):', fetchErr.message);
+      // We proceed with empty metadata, relying solely on the URL string.
+    }
+
+    const prompt = `You are an AI assistant for a URL Shortener. 
+The user wants to shorten the following URL:
+${longUrl}
+
+Website Title: ${pageTitle || 'Unknown'}
+Website Description: ${pageDescription || 'Unknown'}
+
+Based on this information (and the URL string itself), generate 3 highly clickable, short, memorable, and URL-safe custom aliases. 
+Rules:
+1. Max length: 20 characters per alias.
+2. Use only lowercase letters, numbers, and hyphens. No spaces.
+3. Output strictly a JSON array of 3 strings. Example: ["summer-sale", "nike-shoes", "buy-now"]
+4. Do not include markdown formatting like \`\`\`json. Output raw JSON only.`;
+
+    const aiResponse = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: prompt,
+    });
+
+    let resultText = aiResponse.text.trim();
+    if (resultText.startsWith('\`\`\`json')) {
+       resultText = resultText.replace(/^\`\`\`json/, '').replace(/\`\`\`$/, '').trim();
+    }
+
+    let suggestions = [];
+    try {
+      suggestions = JSON.parse(resultText);
+    } catch (parseErr) {
+      console.error('Failed to parse AI response:', resultText);
+      return res.status(500).json({ success: false, error: 'Failed to generate valid suggestions.' });
+    }
+
+    res.status(200).json({ success: true, suggestions });
+  } catch (err) {
+    console.error('Error suggesting aliases:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to suggest aliases' });
+  }
+};
+
 module.exports = {
   getMyLinks,
   deleteLink,
   updateLink,
   getAIInsights,
+  suggestAliases,
 };

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import QRCode from "react-qr-code";
 import { createShortUrl } from "../services/apiService";
+import { suggestAliases } from "../services/linkService";
 import Spinner from "../components/Spinner";
 import { useAuth } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
@@ -14,7 +15,38 @@ const ShortenPage = () => {
   const [isCopied, setIsCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
   const { getToken } = useAuth();
+
+  const handleSuggestAliases = async () => {
+    if (!longUrl) {
+      toast.error("Please enter a Long URL first.");
+      return;
+    }
+    const urlPattern = new RegExp('^(https?:\\/\\/)' +
+      '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' +
+      '((\\d{1,3}\\.){3}\\d{1,3}))', 'i');
+    if (!urlPattern.test(longUrl)) {
+      toast.error("Please enter a valid URL to get suggestions.");
+      return;
+    }
+
+    setIsSuggesting(true);
+    setSuggestions([]);
+    try {
+      const token = await getToken();
+      const res = await suggestAliases(token, longUrl);
+      if (res.success && res.suggestions) {
+        setSuggestions(res.suggestions);
+        toast.success("AI generated suggestions!");
+      }
+    } catch (err) {
+      toast.error(err.error || err.message || "Failed to generate suggestions.");
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
 
   const validateUrl = () => {
     const errors = {};
@@ -148,9 +180,33 @@ const ShortenPage = () => {
                     value={customAlias}
                     onChange={(e) => setCustomAlias(e.target.value)}
                     disabled={isLoading}
-                    className="flex-grow px-4 py-3.5 outline-none font-mono text-slate-800 placeholder-slate-300 w-full"
+                    className="flex-grow px-4 py-3.5 outline-none font-mono text-slate-800 placeholder-slate-300 w-full min-w-[120px]"
                   />
+                  <button
+                    type="button"
+                    onClick={handleSuggestAliases}
+                    disabled={isSuggesting || isLoading}
+                    className="px-4 py-2 m-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-semibold text-sm rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
+                  >
+                    {isSuggesting ? <Spinner size="small" /> : '✨ Suggest'}
+                  </button>
                 </div>
+                
+                {suggestions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    {suggestions.map((sug, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => { setCustomAlias(sug); setFormErrors(prev => ({...prev, customAlias: null})) }}
+                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-mono rounded-full shadow-sm transition-colors"
+                      >
+                        {sug}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {formErrors.customAlias && (
                   <p className="text-red-500 text-sm mt-2 font-medium flex items-center gap-1"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> {formErrors.customAlias}</p>
                 )}
