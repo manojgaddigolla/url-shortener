@@ -68,3 +68,24 @@ export const updateUserLink = async (token, id, data) => {
     throw new Error('An unexpected error occurred while updating link.');
   }
 };
+
+export const getAIInsights = async (token, id, question, context) => {
+  try {
+    const response = await axios({
+      method: 'POST',
+      url: `${API_URL}/${id}/ai-insights`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      data: { question, context },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('API Error: Failed to fetch AI insights', error.response?.data || error);
+    if (error.response?.data) {
+      throw error.response.data;
+    }
+    throw new Error('An unexpected error occurred while fetching AI insights.');
+  }
+};

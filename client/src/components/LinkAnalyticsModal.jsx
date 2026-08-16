@@ -14,6 +14,9 @@ import {
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import toast from 'react-hot-toast';
+import ReactMarkdown from 'react-markdown';
+import { useAuth } from '@clerk/clerk-react';
+import { getAIInsights } from '../services/linkService';
 
 ChartJS.register(
   CategoryScale,
@@ -46,7 +49,6 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
     return new Date().toISOString().split('T')[0];
   });
 
-  // Cross-Filtering State
   const [filters, setFilters] = useState({
     os: null,
     browser: null,
@@ -55,6 +57,12 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
     device: null,
     referrer: null
   });
+
+  // AI State
+  const { getToken } = useAuth();
+  const [aiQuestion, setAiQuestion] = useState('');
+  const [aiInsight, setAiInsight] = useState('');
+  const [isAskingAI, setIsAskingAI] = useState(false);
 
   // Prevent background scrolling
   useEffect(() => {
@@ -403,6 +411,49 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
 
   const activeFiltersCount = Object.values(filters).filter(Boolean).length;
 
+  const handleAskAI = async (e, suggestedQuestion = null) => {
+    if (e) e.preventDefault();
+    const questionToAsk = suggestedQuestion || aiQuestion;
+    if (!questionToAsk.trim()) return;
+
+    setIsAskingAI(true);
+    setAiInsight('');
+    if (suggestedQuestion) setAiQuestion(suggestedQuestion);
+
+    try {
+      const token = await getToken();
+      
+      const context = {
+        totalClicks,
+        uniqueVisitors,
+        dateRange: { start: customStartDate, end: customEndDate },
+        activeFilters: filters,
+        timeSeriesData: chartLabels.map((l, i) => ({ label: l, count: chartCounts[i] })),
+        topLocations: {
+           countries: Object.fromEntries(sortedCountries),
+           cities: Object.fromEntries(sortedCities)
+        },
+        technology: {
+           os: Object.fromEntries(sortedOS),
+           browsers: Object.fromEntries(sortedBrowsers),
+           devices: Object.fromEntries(sortedDevices)
+        },
+        referrers: Object.fromEntries(sortedReferrers),
+        hourlyDistribution: hourlyCounts
+      };
+
+      const response = await getAIInsights(token, link._id, questionToAsk, context);
+      if (response.success) {
+        setAiInsight(response.insight);
+      }
+    } catch (err) {
+      console.error("AI Error:", err);
+      toast.error(err.error || err.message || 'Failed to get AI insights.');
+    } finally {
+      setIsAskingAI(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
       <div className="bg-slate-50 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200 flex flex-col" onClick={e => e.stopPropagation()}>
@@ -447,13 +498,17 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
         
         <div className="flex items-center gap-3 w-full md:w-auto">
           {isAdvancedMode && (
-             <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200/60 mr-4">
+              <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200/60 mr-4">
                 <button onClick={() => setViewMode('charts')} className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${viewMode === 'charts' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
                   Visuals
                 </button>
                 <button onClick={() => setViewMode('raw')} className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all flex items-center gap-1.5 ${viewMode === 'raw' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
                   Raw Data
-                  <span className="bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded-full uppercase font-bold">AI Ready</span>
+                </button>
+                <button onClick={() => setViewMode('ai')} className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all flex items-center gap-1.5 ${viewMode === 'ai' ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-indigo-200' : 'text-slate-500 hover:text-indigo-600'}`}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                  Ask AI
+                  <span className="bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded-full uppercase font-bold">New</span>
                 </button>
              </div>
           )}
@@ -495,7 +550,7 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
         )}
 
         {/* View Router */}
-        {viewMode === 'charts' ? (
+        {viewMode === 'charts' && (
           <>
             {/* Top Metrics & Chart */}
             <div className="mb-8 saas-card p-6">
@@ -683,7 +738,9 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
               })()}
             </div>
           </>
-        ) : (
+        )}
+        
+        {viewMode === 'raw' && (
           /* RAW DATA TABLE VIEW */
           <div className="saas-card overflow-hidden animate-in fade-in duration-300">
             <div className="overflow-x-auto">
@@ -740,6 +797,73 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
               <span>Showing {filteredAnalytics.length} filtered events</span>
               <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Live AI Context Ready</span>
             </div>
+          </div>
+        )}
+
+        {/* AI INSIGHTS VIEW */}
+        {viewMode === 'ai' && (
+          <div className="saas-card p-6 min-h-[400px] flex flex-col animate-in fade-in duration-300">
+            <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+               <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+               </div>
+               <div>
+                 <h3 className="text-lg font-bold text-slate-900">AI Data Analyst</h3>
+                 <p className="text-sm text-slate-500">Ask questions about your current filtered traffic data.</p>
+               </div>
+            </div>
+
+            <div className="flex-grow overflow-y-auto mb-6 pr-2">
+              {!aiInsight && !isAskingAI && (
+                <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                   <svg className="w-12 h-12 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                   <p className="text-slate-500 max-w-md mx-auto mb-6">Your data context ({filteredAnalytics.length} events) is loaded. What would you like to know?</p>
+                   
+                   <div className="flex flex-wrap justify-center gap-2">
+                     <button onClick={(e) => handleAskAI(e, 'What is the most significant trend in this traffic data?')} className="px-4 py-2 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-full text-sm text-slate-600 hover:text-indigo-700 transition-colors">
+                        "What is the most significant trend?"
+                     </button>
+                     <button onClick={(e) => handleAskAI(e, 'Summarize the geographic and device breakdown of these visitors.')} className="px-4 py-2 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-full text-sm text-slate-600 hover:text-indigo-700 transition-colors">
+                        "Summarize demographics"
+                     </button>
+                     <button onClick={(e) => handleAskAI(e, 'Are there any anomalies or surprising spikes in the hourly data?')} className="px-4 py-2 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-full text-sm text-slate-600 hover:text-indigo-700 transition-colors">
+                        "Are there any anomalies?"
+                     </button>
+                   </div>
+                </div>
+              )}
+
+              {isAskingAI && (
+                <div className="flex items-center gap-3 text-indigo-600 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                   <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                   <span className="font-medium animate-pulse">Analyzing traffic data...</span>
+                </div>
+              )}
+
+              {aiInsight && !isAskingAI && (
+                <div className="prose prose-sm prose-indigo max-w-none text-slate-700">
+                   <ReactMarkdown>{aiInsight}</ReactMarkdown>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleAskAI} className="relative mt-auto">
+               <input 
+                 type="text" 
+                 value={aiQuestion}
+                 onChange={e => setAiQuestion(e.target.value)}
+                 placeholder="Ask a question about your traffic..." 
+                 className="w-full saas-input pl-4 pr-12 py-3 shadow-inner bg-slate-50 focus:bg-white"
+                 disabled={isAskingAI}
+               />
+               <button 
+                 type="submit"
+                 disabled={!aiQuestion.trim() || isAskingAI}
+                 className="absolute right-2 top-2 bottom-2 aspect-square flex items-center justify-center bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 transition-colors"
+               >
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+               </button>
+            </form>
           </div>
         )}
 
