@@ -81,7 +81,7 @@ Be concise, highly professional, and format your response in beautiful Markdown 
     const prompt = `${systemPrompt}\n\n=== AGGREGATED DATA ===\n${JSON.stringify(context, null, 2)}\n\n=== USER QUESTION ===\n${question}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-3.6-flash',
       contents: prompt,
     });
 
@@ -154,36 +154,11 @@ const suggestAliases = async (req, res) => {
       return res.status(500).json({ success: false, error: 'AI features are not configured.' });
     }
 
-    // Attempt to fetch website metadata
-    let pageTitle = '';
-    let pageDescription = '';
-    
-    try {
-      const fetchResponse = await fetch(longUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-        signal: AbortSignal.timeout(3000) // 3 second timeout
-      });
-      const htmlText = await fetchResponse.text();
-      
-      const titleMatch = htmlText.match(/<title[^>]*>([^<]+)<\/title>/i);
-      if (titleMatch) pageTitle = titleMatch[1].trim();
-
-      const descMatch = htmlText.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i) || 
-                        htmlText.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["'][^>]*>/i);
-      if (descMatch) pageDescription = descMatch[1].trim();
-    } catch (fetchErr) {
-      console.warn('Could not fetch URL metadata (might be blocked or timeout):', fetchErr.message);
-      // We proceed with empty metadata, relying solely on the URL string.
-    }
-
     const prompt = `You are an AI assistant for a URL Shortener. 
 The user wants to shorten the following URL:
 ${longUrl}
 
-Website Title: ${pageTitle || 'Unknown'}
-Website Description: ${pageDescription || 'Unknown'}
-
-Based on this information (and the URL string itself), generate 3 highly clickable, short, memorable, and URL-safe custom aliases. 
+Based on the URL string, generate 3 highly clickable, short, memorable, and URL-safe custom aliases. 
 Rules:
 1. Max length: 20 characters per alias.
 2. Use only lowercase letters, numbers, and hyphens. No spaces.
@@ -191,7 +166,7 @@ Rules:
 4. Do not include markdown formatting like \`\`\`json. Output raw JSON only.`;
 
     const aiResponse = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-3.6-flash',
       contents: prompt,
     });
 

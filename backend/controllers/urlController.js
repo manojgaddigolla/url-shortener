@@ -23,7 +23,7 @@ const shortenUrl = async (req, res) => {
     return res.status(400).json({ success: false, error: 'Please provide a URL' });
   }
   if (!validUrl.isUri(longUrl)) {
-    return res.status(401).json({ success: false, error: 'Invalid base URL' });
+    return res.status(400).json({ success: false, error: 'Invalid base URL' });
   }
 
   // Validate custom alias if provided

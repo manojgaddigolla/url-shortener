@@ -59,6 +59,7 @@ const DashboardPage = () => {
   useEffect(() => {
     if (!isLoaded) return;
     fetchLinks();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded]);
 
 
@@ -266,11 +267,10 @@ const DashboardPage = () => {
 
   const maxClicksInDay = Math.max(...last7Days.map(d => d.count), 1);
 
-  const sortedOS = Object.entries(topOS).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  const sortedBrowsers = Object.entries(topBrowsers).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  const sortedCountries = Object.entries(topCountries).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  const sortedCities = Object.entries(topCities).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  const sortedDevices = Object.entries(deviceTypes).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const sortedOS = Object.entries(topOS).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const sortedBrowsers = Object.entries(topBrowsers).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const sortedCities = Object.entries(topCities).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const sortedDevices = Object.entries(deviceTypes).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
   return (
     <div className="max-w-6xl mx-auto mt-8">

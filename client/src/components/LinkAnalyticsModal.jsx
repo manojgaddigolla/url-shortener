@@ -70,9 +70,7 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
     return () => { document.body.style.overflow = 'auto'; };
   }, []);
 
-  if (!link) return null;
-
-  const rawAnalytics = link.analytics || [];
+  const rawAnalytics = useMemo(() => link?.analytics || [], [link?.analytics]);
 
   // Helper to normalize user agents
   const parseVisit = (visit) => {
@@ -95,7 +93,7 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
       if (cleanRef !== 'Direct') {
          cleanRef = new URL(cleanRef).hostname.replace('www.', '');
       }
-    } catch(e) {}
+    } catch { /* ignore */ }
 
     const device = visit.deviceType ? visit.deviceType.charAt(0).toUpperCase() + visit.deviceType.slice(1).toLowerCase() : 'Desktop';
     const city = visit.city || 'Unknown';
@@ -131,7 +129,7 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
   }, [parsedRawAnalytics, isAdvancedMode, customStartDate, customEndDate, filters]);
 
   // 2. Compute Top Level Metrics
-  const totalClicks = isAdvancedMode ? filteredAnalytics.length : (link.clicks || 0);
+  const totalClicks = isAdvancedMode ? filteredAnalytics.length : (link?.clicks || 0);
   
   const uniqueVisitors = useMemo(() => {
     const ips = new Set();
@@ -140,6 +138,8 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
     });
     return ips.size;
   }, [filteredAnalytics]);
+
+  if (!link) return null;
 
   // 3. Main Chart Calculation
   let chartLabels = [];
@@ -263,12 +263,12 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
     hourlyCounts[hour]++;
   });
 
-  const sortedOS = Object.entries(topOS).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const sortedBrowsers = Object.entries(topBrowsers).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const sortedCities = Object.entries(topCities).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const sortedCountries = Object.entries(topCountries).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const sortedDevices = Object.entries(deviceTypes).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]);
-  const sortedReferrers = Object.entries(topReferrers).filter(([_, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const sortedOS = Object.entries(topOS).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const sortedBrowsers = Object.entries(topBrowsers).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const sortedCities = Object.entries(topCities).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const sortedCountries = Object.entries(topCountries).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const sortedDevices = Object.entries(deviceTypes).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]);
+  const sortedReferrers = Object.entries(topReferrers).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   // Chart configs
   const datasets = [
@@ -354,14 +354,6 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
   };
 
   // Device Doughnut Chart
-  const deviceChartData = {
-    labels: sortedDevices.map(d => d[0]),
-    datasets: [{
-      data: sortedDevices.map(d => d[1]),
-      backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#6366f1', '#8b5cf6'],
-      borderWidth: 0,
-    }]
-  };
   const doughnutOptions = {
     responsive: true, maintainAspectRatio: false,
     plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 12, family: 'Inter' }, color: '#475569', padding: 16 } } },
@@ -656,7 +648,7 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
                                }} 
                                options={{
                                  ...doughnutOptions,
-                                 onClick: (event, elements, chart) => {
+                                 onClick: (event, elements) => {
                                     if (elements.length > 0) {
                                       const idx = elements[0].index;
                                       toggleFilter(type, data[idx][0]);
