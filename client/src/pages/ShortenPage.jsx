@@ -50,17 +50,18 @@ const ShortenPage = () => {
 
   const validateUrl = () => {
     const errors = {};
-    const urlPattern = new RegExp('^(https?:\\/\\/)' +
-      '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' +
-      '((\\d{1,3}\\.){3}\\d{1,3}))' +
-      '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' +
-      '(\\?[;&a-z\\d%_.~+=-]*)?' +
-      '(\\#[-a-z\\d_]*)?$', 'i');
 
     if (!longUrl) {
       errors.longUrl = 'URL field cannot be empty.';
-    } else if (!urlPattern.test(longUrl)) {
-      errors.longUrl = 'Please enter a valid URL (e.g., https://example.com).';
+    } else {
+      try {
+        const urlObj = new URL(longUrl);
+        if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+          errors.longUrl = 'Please enter a valid HTTP or HTTPS URL.';
+        }
+      } catch (err) {
+        errors.longUrl = 'Please enter a valid URL (e.g., https://example.com).';
+      }
     }
 
     if (customAlias) {

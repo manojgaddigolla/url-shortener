@@ -796,13 +796,22 @@ const LinkAnalyticsModal = ({ link, onClose }) => {
         {viewMode === 'ai' && (
           <div className="saas-card p-6 min-h-[400px] flex flex-col animate-in fade-in duration-300">
             <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-               <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+               <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                </div>
-               <div>
+               <div className="flex-1">
                  <h3 className="text-lg font-bold text-slate-900">AI Data Analyst</h3>
                  <p className="text-sm text-slate-500">Ask questions about your current filtered traffic data.</p>
                </div>
+               {aiInsight && (
+                 <button 
+                   onClick={() => { setAiInsight(''); setAiQuestion(''); }} 
+                   className="text-sm text-slate-600 hover:text-indigo-700 font-medium px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 transition-colors flex items-center gap-1.5"
+                 >
+                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                   Reset
+                 </button>
+               )}
             </div>
 
             <div className="flex-grow overflow-y-auto mb-6 pr-2">

@@ -11,6 +11,7 @@ const errorHandler = require('./middleware/errorMiddleware');
 const connectDB = require('./config/db');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const path = require('path');
 const { clerkMiddleware } = require('@clerk/express');
 const app = express();
@@ -22,8 +23,38 @@ app.set('trust proxy', 1);
 
 connectDB();
 
-// Enable CORS for all routes
-app.use(cors());
+// Add security headers (disable CSP/COEP to avoid breaking Clerk and frontend assets)
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
+
+// Enable CORS with restricted origins
+const allowedOrigins = [
+  'http://localhost:5173', 
+  'http://127.0.0.1:5173',
+  process.env.FRONTEND_URL,
+  process.env.BASE_URL
+].filter(Boolean);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, or same-origin)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // In dev mode, be lenient to avoid unexpected friction
+    if (process.env.NODE_ENV !== 'production') {
+       return callback(null, true);
+    }
+
+    callback(new Error('CORS policy violation: Origin not allowed'));
+  },
+  credentials: true
+}));
 
 // Webhook route needs raw body, so mount it before express.json()
 const webhookRoutes = require('./routes/webhooks');

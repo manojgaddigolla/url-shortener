@@ -19,6 +19,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
     "geoip-lite": "^1.4.10",
+    "helmet": "^8.3.0",
     "mongoose": "^9.1.6",
     "nanoid": "^5.1.6",
     "svix": "^1.99.1",
