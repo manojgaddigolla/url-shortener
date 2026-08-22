@@ -70,6 +70,10 @@ const UrlSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  passwordHash: {
+    type: String,
+    required: false,
+  },
 });
 
 UrlSchema.index({ user: 1, date: -1 });

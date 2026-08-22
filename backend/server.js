@@ -61,6 +61,7 @@ const webhookRoutes = require('./routes/webhooks');
 app.use('/api/webhooks', webhookRoutes);
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(clerkMiddleware());
 
 const linksRoutes = require('./routes/links');

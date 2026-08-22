@@ -11,6 +11,7 @@ const ShortenPage = () => {
   const [longUrl, setLongUrl] = useState('');
   const [expiresInDays, setExpiresInDays] = useState('');
   const [customAlias, setCustomAlias] = useState('');
+  const [password, setPassword] = useState('');
   const [shortUrlData, setShortUrlData] = useState(null);
   const [isCopied, setIsCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -92,7 +93,7 @@ const ShortenPage = () => {
 
     try {
       const token = await getToken();
-      const data = await createShortUrl(longUrl, expiresInDays || undefined, customAlias || undefined, token);
+      const data = await createShortUrl(longUrl, expiresInDays || undefined, customAlias || undefined, password || undefined, token);
       setShortUrlData(data);
       toast.success('URL shortened successfully!');
     } catch (err) {
@@ -229,11 +230,27 @@ const ShortenPage = () => {
                     <option value="7">Expires in 7 Days</option>
                     <option value="30">Expires in 30 Days</option>
                   </select>
-                  <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                   </div>
                 </div>
                 <p className="text-xs text-slate-400 mt-2">Automatically delete this link from the database.</p>
+              </div>
+
+              {/* Password Protection */}
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                  Password Protect <span className="text-xs font-normal text-slate-400">(Optional)</span>
+                </label>
+                <input
+                  type="password"
+                  placeholder="Leave empty for public access"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  className="w-full bg-white rounded-xl border border-slate-300 px-4 py-3.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-50 transition-all font-medium text-slate-700 shadow-sm placeholder-slate-300"
+                />
               </div>
 
             </div>

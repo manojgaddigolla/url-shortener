@@ -11,6 +11,10 @@ const redirectLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// GET request for normal redirect (or to render password form if protected)
 router.get('/:code', redirectLimiter, redirectToUrl);
+
+// POST request to submit password for protected links
+router.post('/:code', redirectLimiter, redirectToUrl);
 
 module.exports = router;
